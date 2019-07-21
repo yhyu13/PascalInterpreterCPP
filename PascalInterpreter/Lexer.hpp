@@ -72,10 +72,23 @@ protected:
 	*/
 	inline void skip_white_space()
 	{
-		while (std::isspace(m_CurrentChar) && m_CurrentChar != '\0')
+		while ((std::isspace(m_CurrentChar) || m_CurrentChar == '\n') && m_CurrentChar != '\0')
 		{
 			advance_currentChar();
 		}
+	}
+
+	/*
+	Funcationality: helper function to skip comment
+	*/
+	inline void skip_comment()
+	{
+		char end = (m_CurrentChar == '#') ? '\n' : '}';
+		while (m_CurrentChar != end && m_CurrentChar != '\0')
+		{
+			advance_currentChar();
+		}
+		advance_currentChar();
 	}
 
 	/*
@@ -114,19 +127,27 @@ protected:
 	*/
 	SHARE_TOKEN_STRING GetIdToken()
 	{
+		SHARE_TOKEN_STRING result;
 		std::string charBuffer = "";
 		while ((m_CurrentChar == '_' || std::isalnum(m_CurrentChar)) && m_CurrentChar != '\0')
 		{
 			charBuffer += MyTemplates::Str(m_CurrentChar);
 			advance_currentChar();
 		}
-		std::string reserverd_keywords[2] = { BEGIN , END };
-		std::string* find = std::find(std::begin(reserverd_keywords), std::end(reserverd_keywords), charBuffer);
 
-		if (find != std::end(reserverd_keywords))
-			return MAKE_SHARE_TOKEN(charBuffer, MAKE_SHARE_STRING(charBuffer));
+		if (ITEM_IN_VEC(charBuffer, reserverd_keywords))
+		{
+			result = MAKE_SHARE_TOKEN(charBuffer, MAKE_SHARE_STRING(charBuffer));
+		}
+		else if (ITEM_IN_VEC(charBuffer, type_keywords))
+		{
+			result = MAKE_SHARE_TOKEN(TYPE, MAKE_SHARE_STRING(charBuffer));
+		}
 		else
-			return MAKE_SHARE_TOKEN(ID, MAKE_SHARE_STRING(charBuffer));
+		{
+			result = MAKE_SHARE_TOKEN(ID, MAKE_SHARE_STRING(charBuffer));
+		}
+		return result;
 	}
 
 
@@ -139,30 +160,55 @@ public:
 	{
 		while (m_CurrentChar != '\0')
 		{
-			if (std::isspace(m_CurrentChar))
+			// Skip white spaces and change line
+			if (std::isspace(m_CurrentChar) || m_CurrentChar == '\n')
 			{
 				skip_white_space();
 				continue;
 			}
+			// Skip comment starts with '#' and all the way to the end of a line, or starts with '{' and end with '}'
+			if (m_CurrentChar == '#' || m_CurrentChar == '{')
+			{
+				skip_comment();
+				continue;
+			}
+			// Get statics integer/float token
 			else if (std::isdigit(m_CurrentChar))
 			{
 				return GetDecimalNumberToken();
 			}
+			// Variables must start with a undersocre or a alphabet
 			else if ((m_CurrentChar == '_' || std::isalpha(m_CurrentChar)))
 			{
 				return GetIdToken();
 			}
-			else if (m_CurrentChar == ':' && peek_nextChar() == '=')
+			else if (m_CurrentChar == ':')
+			{
+				// Variable assignment be like 'a := 1.0'
+				if (peek_nextChar() == '=')
+				{
+					advance_currentChar();
+					advance_currentChar();
+					return MAKE_SHARE_TOKEN(ASSIGN, MAKE_SHARE_STRING(":="));
+				}
+				else
+				{
+					advance_currentChar();
+					return MAKE_SHARE_TOKEN(COLON, MAKE_SHARE_STRING(":"));
+				}
+			}
+			else if (m_CurrentChar == ',')
 			{
 				advance_currentChar();
-				advance_currentChar();
-				return MAKE_SHARE_TOKEN(ASSIGN, MAKE_SHARE_STRING(":="));
+				return MAKE_SHARE_TOKEN(COMMA, MAKE_SHARE_STRING(","));
 			}
+			// Semi colon segements statements
 			else if (m_CurrentChar == ';')
 			{
 				advance_currentChar();
 				return MAKE_SHARE_TOKEN(SEMI, MAKE_SHARE_STRING(";"));
 			}
+			// Every program ends witha '.'
 			else if (m_CurrentChar == '.')
 			{
 				if (!std::isdigit(peek_nextChar()))
@@ -170,6 +216,7 @@ public:
 					advance_currentChar();
 					return MAKE_SHARE_TOKEN(DOT, MAKE_SHARE_STRING("."));
 				}
+				// a = .4 is a vaild assignment, a is now equals to 0.4
 				else
 				{
 					return GetDecimalNumberToken();
@@ -192,8 +239,18 @@ public:
 			}
 			else if (m_CurrentChar == '/')
 			{
-				advance_currentChar();
-				return MAKE_SHARE_TOKEN(DIV, MAKE_SHARE_STRING("/"));
+				// '//' indicates integer division
+				if (peek_nextChar() == '/')
+				{
+					advance_currentChar();
+					advance_currentChar();
+					return MAKE_SHARE_TOKEN(INT_DIV, MAKE_SHARE_STRING("//"));
+				}
+				else
+				{
+					advance_currentChar();
+					return MAKE_SHARE_TOKEN(DIV, MAKE_SHARE_STRING("/"));
+				}
 			}
 			else if (m_CurrentChar == '(')
 			{
@@ -205,10 +262,10 @@ public:
 				advance_currentChar();
 				return MAKE_SHARE_TOKEN(RIGHT_PARATHESES, MAKE_SHARE_STRING(")"));
 			}
+			// No known token returned, raise excpetion.
 			else
-				// No Token returned, raise excpetion.
 			{
-				Error("SynatxError(lexer): unknown keyword.");
+				Error("SynatxError(lexer): unknown keyword: '" + MyTemplates::Str(m_CurrentChar) + "'.");
 			}
 		}
 		// Reaching EOF
@@ -219,4 +276,6 @@ private:
 	std::string m_text;
 	unsigned int m_pos;
 	char m_CurrentChar;
+	std::vector<std::string> reserverd_keywords = { BEGIN , END , PROGRAM, VAR};
+	std::vector<std::string> type_keywords = { INTEGER, FLOAT };
 };

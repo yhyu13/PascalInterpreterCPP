@@ -41,7 +41,7 @@ int main()
 					while (getline(infile, LINE)) // To get you all the lines.
 					{
 						std::cout << LINE << std::endl; // Prints our STRING.
-						file = file + " " + LINE;
+						file = file + "\n" + LINE;
 					}
 					infile.close();
 

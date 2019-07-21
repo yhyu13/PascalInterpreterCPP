@@ -73,17 +73,110 @@ protected:
 		}
 		else
 		{
-			Error("SynatxError(parser): should comsume " + type + ", instead, comsuming " + m_CurrentToken->GetType());
+			Error("SynatxError(parser): should comsume " + type + ", instead, comsuming " + m_CurrentToken->ToString());
 		}
 	}
 	/*
-		program: compound_statement DOT
+	Functionality: Simply call GetNextToken with type matching
+	Return: current token equals __EOF___
+	*/
+	bool TryConsumeTokenType(std::string type)
+	{
+
+		if (m_CurrentToken->GetType() == type)
+		{
+			m_CurrentToken = m_lexer.GetNextToken();
+			return m_CurrentToken->GetType() != __EOF__;
+		}
+		else
+		{
+			return false;
+		}
+	}
+protected:
+	/*
+		program: PROGRAM variable SEMI Block DOT
 	*/
 	SHARE_AST GetProgram()
 	{
-		auto result = GetCompoundStatements();
-		ConsumeTokenType(DOT);
+		SHARE_AST result;
+		// Declared a prorgam name
+		if (TryConsumeTokenType(PROGRAM))
+		{
+			auto programName = GetVariable();
+			ConsumeTokenType(SEMI);
+			auto block = GetBlock();
+			ConsumeTokenType(DOT);
+			result = MAKE_SHARE_PROGRAM_AST(programName, block);
+		}
+		// No program name declared
+		else
+		{
+			result = GetBlock();
+			ConsumeTokenType(DOT);
+		}
 		return result;
+	}
+	/*
+		Block: Declaration  compound_statement
+	*/
+	SHARE_AST GetBlock()
+	{
+		auto decal = GetDeclaration();
+		auto comp = GetCompoundStatements();
+		CREATE_SHARE_BLOCK_AST(result, decal, comp)
+		return result;
+	}
+	/*
+		Declaration: Empty | VAR(variable_declaration SEMI)+
+	*/
+	SHARE_AST GetDeclaration()
+	{
+		// Variable Decalration exists
+		if (TryConsumeTokenType(VAR))
+		{
+			CREATE_SHARE_DECLARATION_AST(results);
+			while (m_CurrentToken->GetType() == ID)
+			{
+				results->AddVarDecal(GetVariableDeclaration());
+				ConsumeTokenType(SEMI);
+			}
+			return results;
+		}
+		else
+		{
+			return MAKE_SHARE_EMPTY_AST();
+		}
+	}
+	/*
+	variable declaration: ID (COMMA ID)* COLON type_spec
+	*/
+	SHARE_AST GetVariableDeclaration()
+	{
+		CREATE_SHARE_DECLCONTAINER_AST(temp);
+		CREATE_SHARE_DECLCONTAINER_AST(results);
+		temp->AddItem(GetVariable());
+		while (TryConsumeTokenType(COMMA))
+		{
+			temp->AddItem(GetVariable());
+		}
+		ConsumeTokenType(COLON);
+		auto type = GetTypeSpec();
+		// Add VarDecal(var, type) pair into Decal Container
+		for (auto& item : temp->GetAllChildren())
+		{
+			results->AddItem(MAKE_SHARE_VARDECL_AST(item, type));
+		}
+		return results;
+	}
+	/*
+	return type token
+	*/
+	SHARE_AST GetTypeSpec()
+	{
+		auto token = m_CurrentToken;
+		ConsumeTokenType(TYPE);
+		return MAKE_SHARE_AST(token);
 	}
 	/*
 		compound_statement: BEGIN statement_list END
@@ -179,24 +272,23 @@ protected:
 	SHARE_AST GetFactor()
 	{
 		auto token = m_CurrentToken;
-		std::string token_code[7] = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS , ID, FLOAT};
 		// Handle integer
-		if (token->GetType() == token_code[0] || token->GetType() == token_code[6])
+		if (token->GetType() == token_code_factor[0] || token->GetType() == token_code_factor[6])
 		{
 			ConsumeTokenType(token->GetType());
 			return MAKE_SHARE_AST(token);
 		}
 		// Handle paratheses
-		else if (token->GetType() == token_code[1])
+		else if (token->GetType() == token_code_factor[1])
 		{
-			ConsumeTokenType(token_code[1]);
+			ConsumeTokenType(token_code_factor[1]);
 			auto result = GetExpr();
 			m_pAST = result;
-			ConsumeTokenType(token_code[2]);
+			ConsumeTokenType(token_code_factor[2]);
 			return result;
 		}
 		// Handle unary operator
-		else if (token->GetType() == token_code[3] || token->GetType() == token_code[4])
+		else if (token->GetType() == token_code_factor[3] || token->GetType() == token_code_factor[4])
 		{
 			ConsumeTokenType(token->GetType());
 			CREATE_SHARE_UNARY_AST(result, token, GetFactor());
@@ -204,7 +296,7 @@ protected:
 			return result;
 		}
 		// Handle variable
-		else if (token->GetType() == token_code[5])
+		else if (token->GetType() == token_code_factor[5])
 		{
 			return GetVariable();
 		}
@@ -221,10 +313,8 @@ protected:
 	{
 		auto result = GetFactor();
 		m_pAST = result;
-		std::string token_code[2] = { MUL, DIV };
 
-		while ((m_CurrentToken->GetType() == token_code[0]) ||
-			(m_CurrentToken->GetType() == token_code[1]))
+		while (ITEM_IN_VEC(m_CurrentToken->GetType(), token_code_term))
 		{
 			auto token = m_CurrentToken;
 			ConsumeTokenType(token->GetType());
@@ -242,10 +332,8 @@ protected:
 	{
 		auto result = GetTerm();
 		m_pAST = result;
-		std::string token_code[2] = { PLUS, MINUS };
 
-		while ((m_CurrentToken->GetType() == token_code[0]) ||
-			(m_CurrentToken->GetType() == token_code[1]))
+		while (ITEM_IN_VEC(m_CurrentToken->GetType(), token_code_expr))
 		{
 			auto token = m_CurrentToken;
 			ConsumeTokenType(token->GetType());
@@ -275,5 +363,8 @@ private:
 	Lexer m_lexer;
 	SHARE_TOKEN_STRING m_CurrentToken;
 	SHARE_AST m_pAST;
+	std::vector<std::string> token_code_factor = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS , ID, FLOAT };
+	std::vector<std::string> token_code_term = { MUL, DIV, INT_DIV };
+	std::vector<std::string> token_code_expr = { PLUS, MINUS };
 };
 

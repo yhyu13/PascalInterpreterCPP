@@ -177,3 +177,152 @@ private:
 	SHARE_AST m_op;
 };
 
+class Program_AST : public AST
+{
+public:
+	explicit Program_AST(SHARE_AST name, SHARE_AST block)
+	{
+		(check_is_shared_ptr(name)) ? m_name = name :
+			throw MyExceptions::InterpreterExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+		(check_is_shared_ptr(block)) ? m_block = block :
+			throw MyExceptions::InterpreterExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+	}
+	~Program_AST() noexcept override {};
+
+	std::string GetName() const noexcept
+	{
+		return *(m_name->GetToken()->GetValue());
+	}
+
+	SHARE_TOKEN_STRING GetToken() const noexcept override
+	{
+		return m_name->GetToken();
+	}
+	SHARE_AST GetBlock() const noexcept
+	{
+		return m_block;
+	}
+	std::string ToString() const noexcept override
+	{
+		return "Program: ( " + m_name->ToString() + " , " + m_block->ToString() + " ) ";
+	}
+private:
+	SHARE_AST m_name;
+	SHARE_AST m_block;
+};
+
+class Block_AST : public AST
+{
+public:
+	explicit Block_AST(SHARE_AST declaration, SHARE_AST compound)
+	{
+		(check_is_shared_ptr(declaration)) ? m_declaration = declaration :
+			throw MyExceptions::InterpreterExecption("op passed to a Block_AST constructor must be a shared_ptr type.");
+		(check_is_shared_ptr(compound)) ? m_compound = compound :
+			throw MyExceptions::InterpreterExecption("expr passed to a Block_AST constructor must be a shared_ptr type.");
+	}
+	~Block_AST() noexcept override {};
+
+	SHARE_AST GetDeclaration() const noexcept
+	{
+		return m_declaration;
+	}
+	SHARE_AST GetCompound() const noexcept
+	{
+		return m_compound;
+	}
+	std::string ToString() const noexcept override
+	{
+		return "Program: ( " + m_declaration->ToString() + " , " + m_compound->ToString() + " ) ";
+	}
+private:
+	SHARE_AST m_declaration;
+	SHARE_AST m_compound;
+};
+
+class Declaration_AST : public AST
+{
+public:
+	Declaration_AST()
+	{
+	}
+	void AddVarDecal(SHARE_AST child) noexcept
+	{
+		m_children.push_back(child);
+	}
+	std::vector<SHARE_AST> GetAllChildren() const noexcept
+	{
+		return m_children;
+	}
+	std::string ToString() const noexcept override
+	{
+		std::ostringstream oss;
+		oss << "Declaration_AST : ( ";
+		for (auto& child : m_children)
+		{
+			oss << " { " << child->ToString() << " }, ";
+		}
+		oss << " ) ";
+		return oss.str();
+	}
+private:
+	std::vector<SHARE_AST> m_children;
+};
+
+class DeclContainer_AST : public AST
+{
+public:
+	DeclContainer_AST()
+	{
+	}
+	void AddItem(SHARE_AST child) noexcept
+	{
+		m_children.push_back(child);
+	}
+	std::vector<SHARE_AST> GetAllChildren() const noexcept
+	{
+		return m_children;
+	}
+	std::string ToString() const noexcept override
+	{
+		std::ostringstream oss;
+		oss << "DeclContainer_AST : ( ";
+		for (auto& child : m_children)
+		{
+			oss << " { " << child->ToString() << " }, ";
+		}
+		oss << " ) ";
+		return oss.str();
+	}
+private:
+	std::vector<SHARE_AST> m_children;
+};
+
+class VarDecl_AST : public AST
+{
+public:
+	explicit VarDecl_AST(SHARE_AST Var, SHARE_AST Type)
+	{
+		(check_is_shared_ptr(Var)) ? m_var = Var :
+			throw MyExceptions::InterpreterExecption("op passed to a VarDecal_AST constructor must be a shared_ptr type.");
+		(check_is_shared_ptr(Type)) ? m_type = Type :
+			throw MyExceptions::InterpreterExecption("expr passed to a VarDecal_AST constructor must be a shared_ptr type.");
+	}
+	~VarDecl_AST() noexcept override {};
+
+	SHARE_AST GetVar() const noexcept
+	{
+		return m_var;
+	}
+	SHARE_AST GetType() const noexcept
+	{
+		return m_type;
+	}
+	std::string ToString() const noexcept override
+	{
+		return "VarDecl_AST: ( " + m_var->ToString() + " , " + m_type->ToString() + " ) ";
+	}
+private:
+	SHARE_AST m_var;
+	SHARE_AST m_type;
+};

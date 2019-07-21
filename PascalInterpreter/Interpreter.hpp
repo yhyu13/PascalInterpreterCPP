@@ -95,6 +95,17 @@ private:
 			{
 				Error("SyntaxError: Decimal number division by zero.");
 			}
+		case eINT_DIV:
+			if (_right != 0)
+			{
+				if (!isInt)
+					Error("SyntaxError: integer devision applied to non-integer type.");
+				return MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)));
+			}
+			else
+			{
+				Error("SyntaxError: Decimal number division by zero.");
+			}
 		default:
 			Error("SyntaxError: " + op->ToString() + " is an UNKNOWN integer operation.\n");
 		}
@@ -180,6 +191,36 @@ private:
 		{
 			GLOBAL_SCOPE.insert(TOKEN_STRING_PAIR(root_4->GetVarName(), InterpretProgramHelper(root_4->GetRight())));
 		}
+		// Condition: is a block right after the program start
+		else if (SHARE_BLOCk_AST root_5 = dynamic_pointer_cast<Block_AST>(root))
+		{
+			if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root_5->GetDeclaration()))
+			{
+				DEBUG_MSG("Declarations: ");
+				for (SHARE_AST& decalConatiner : declaration->GetAllChildren())
+				{
+					SHARE_DECLCONTAINER_AST _declConatiner = static_pointer_cast<DeclContainer_AST>(decalConatiner);
+					for (SHARE_AST& decal : _declConatiner->GetAllChildren())
+					{
+						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(decal))
+						{
+							DEBUG_MSG(_varDecal->ToString());
+						}
+						else
+						{
+							Error("SyntaxError(Interpreter): unknown declaration");
+						}
+					}
+				}
+			}
+			InterpretProgramHelper(root_5->GetCompound());
+		}
+		// Condition: is a program start
+		else if (SHARE_PROGRAM_AST root_6 = dynamic_pointer_cast<Program_AST>(root))
+		{
+			DEBUG_MSG("Running program: " + root_6->GetName());
+			InterpretProgramHelper(root_6->GetBlock());
+		}
 		// Condition: is a variable/static
 		else
 		{
@@ -198,6 +239,12 @@ private:
 				{
 					Error("NameError(Interpreter): unknown variable '" + var + "'.");
 				}
+			}
+			// is a type declaration
+			else if (type == TYPE)
+			{
+				// TODO: change code below
+				return root->GetToken();
 			}
 			// is static
 			else

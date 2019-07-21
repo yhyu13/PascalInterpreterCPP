@@ -7,14 +7,22 @@
 /*
 Token types
 */
+#define TYPE "TYPE"
 #define INTEGER "INTEGER"
 #define FLOAT "FLOAT"
+
 #define PLUS "PLUS"
 #define MINUS "MINUS"
 #define MUL "MUL"
 #define DIV "DIV"
+#define INT_DIV "INT_DIV"
 #define LEFT_PARATHESES "LEFT_PARATHESES"
 #define RIGHT_PARATHESES "RIGHT_PARATHESES"
+#define COLON "COLON"
+#define COMMA "COMMA"
+
+#define PROGRAM "PROGRAM"
+#define VAR "VAR"
 #define BEGIN "BEGIN"
 #define END "END"
 #define DOT "DOT"
@@ -31,7 +39,8 @@ enum NumOp_code
 	ePLUS,
 	eMINUS,
 	eMULTIPLY,
-	eDIVIDE
+	eDIVIDE,
+	eINT_DIV
 };
 
 NumOp_code GetEnumNumOp(std::string const& op)
@@ -40,6 +49,7 @@ NumOp_code GetEnumNumOp(std::string const& op)
 	else if (op == MINUS) return eMINUS;
 	else if (op == MUL) return eMULTIPLY;
 	else if (op == DIV) return eDIVIDE;
+	else if (op == INT_DIV) return eINT_DIV;
 	else return eUNKNOWN;
 }
 
