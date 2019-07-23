@@ -15,29 +15,17 @@ AST Parser Interpreter
 class Interpreter
 {
 public:
-	Interpreter()
-	{
-		m_parser = Parser();
-	}
-	explicit Interpreter(std::string text)
-	{
-		m_parser = Parser(text);
-	}
+	Interpreter() {};
 	virtual ~Interpreter() {};
-
-	void Reset()
+	
+	void Reset() noexcept
 	{
-		m_parser.Reset();
-	}
-
-	void SetText(std::string text)
-	{
-		m_parser.SetText(text);
+		m_symbolTable.Reset();
 	}
 
 	void PrintVaribalesMap() const noexcept
 	{
-		std::cout << "VaribalesMap contains:\n";
+		std::cout << "GLOBAL_SCOPE contains:\n";
 		for (auto it = GLOBAL_SCOPE.begin(); it != GLOBAL_SCOPE.end(); it++)
 			std::cout << it->first << " => " << it->second->ToString() << '\n';
 	}
@@ -112,24 +100,69 @@ private:
 	}
 
 public:
-
 	/*
 Functionality: an combnination of parsing and interpreting
 Return: InterpretProgram
 */
-	std::string InterpretProgram()
+	void InterpretProgram(SHARE_AST root)
 	{
-		auto root = m_parser.GetProgramAST();
-		auto result = InterpretProgramHelper(root);
-		return *(result->GetValue());
+		InterpretProgramEntryHelper(root);
 	}
 
-
 private:
+	SHARE_TOKEN_STRING InterpretProgramEntryHelper(SHARE_AST root)
+	{
+		if (!root)
+			Error("SyntaxError(Interpreter): root of InterpretProgramEntreHelper is null.");
+
+		// Condition: is a program start
+		if (SHARE_PROGRAM_AST root_1 = dynamic_pointer_cast<Program_AST>(root))
+		{
+			DEBUG_MSG("Running program: " + root_1->GetName());
+			return InterpretProgramEntryHelper(root_1->GetBlock());
+		}
+		// Condition: is a block right after the program start
+		else if (SHARE_BLOCk_AST root_2 = dynamic_pointer_cast<Block_AST>(root))
+		{
+			// Process declarations.
+			if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root_2->GetDeclaration()))
+			{
+				for (SHARE_AST& decalConatiner : declaration->GetAllChildren())
+				{
+					SHARE_DECLCONTAINER_AST _declConatiner = static_pointer_cast<DeclContainer_AST>(decalConatiner);
+					for (SHARE_AST& decal : _declConatiner->GetAllChildren())
+					{
+						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(decal))
+						{
+							std::string type = _varDecal->GetTypeString();
+							std::string name = _varDecal->GetVarString();
+							m_symbolTable.define(VarSymbol(name, BuiltInTypeSymbol(type)));
+						}
+						else
+						{
+							Error("SyntaxError(Interpreter): unknown variable declaration");
+						}
+					}
+				}
+				DEBUG_RUN(m_symbolTable.PrintTable());
+			}
+			else
+			{
+				DEBUG_MSG("Program has no declaration.");
+			}
+			// Process the rest of the program.
+			return InterpretProgramHelper(root_2->GetCompound());
+		}
+		else
+		{
+			Error("SyntaxError(Interpreter): entry not defined");
+		}
+	}
+
 	SHARE_TOKEN_STRING InterpretProgramHelper(SHARE_AST root)
 	{
 		if (!root)
-			Error("SyntaxError: root of AST is null.");
+			Error("SyntaxError(Interpreter): root of InterpretProgramHelper is null.");
 
 		// Condition: is a compound statment
 		if (SHARE_COMPOUND_AST root_0 = dynamic_pointer_cast<Compound_AST>(root))
@@ -189,55 +222,30 @@ private:
 		// Condition: is a assign statement
 		else if (SHARE_ASSIGN_AST root_4 = dynamic_pointer_cast<Assign_AST>(root))
 		{
-			GLOBAL_SCOPE.insert(TOKEN_STRING_PAIR(root_4->GetVarName(), InterpretProgramHelper(root_4->GetRight())));
-		}
-		// Condition: is a block right after the program start
-		else if (SHARE_BLOCk_AST root_5 = dynamic_pointer_cast<Block_AST>(root))
-		{
-			if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root_5->GetDeclaration()))
-			{
-				DEBUG_MSG("Declarations: ");
-				for (SHARE_AST& decalConatiner : declaration->GetAllChildren())
-				{
-					SHARE_DECLCONTAINER_AST _declConatiner = static_pointer_cast<DeclContainer_AST>(decalConatiner);
-					for (SHARE_AST& decal : _declConatiner->GetAllChildren())
-					{
-						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(decal))
-						{
-							DEBUG_MSG(_varDecal->ToString());
-						}
-						else
-						{
-							Error("SyntaxError(Interpreter): unknown declaration");
-						}
-					}
-				}
-			}
-			InterpretProgramHelper(root_5->GetCompound());
-		}
-		// Condition: is a program start
-		else if (SHARE_PROGRAM_AST root_6 = dynamic_pointer_cast<Program_AST>(root))
-		{
-			DEBUG_MSG("Running program: " + root_6->GetName());
-			InterpretProgramHelper(root_6->GetBlock());
+			std::string varname = root_4->GetVarName();
+			m_symbolTable.lookup(varname);
+			auto rhs = InterpretProgramHelper(root_4->GetRight());
+			m_symbolTable.check(varname, rhs->GetType());
+			GLOBAL_SCOPE[root_4->GetVarName()] = InterpretProgramHelper(root_4->GetRight());
 		}
 		// Condition: is a variable/static
 		else
 		{
-			DEBUG_RUN(PrintVaribalesMap());
-
-			auto type = root->GetToken()->GetType();
-			auto var = root->GetToken()->ToString();
+			std::string type = root->GetToken()->GetType();
+			
 			// is variable
 			if (type == ID)
 			{
-				if (GLOBAL_SCOPE.find(var) != GLOBAL_SCOPE.end())
+				DEBUG_RUN(PrintVaribalesMap());
+				std::string name = *(root->GetToken()->GetValue());
+				m_symbolTable.lookup(name);
+				if (GLOBAL_SCOPE.find(name) != GLOBAL_SCOPE.end())
 				{
-					return GLOBAL_SCOPE.at(var);
+					return GLOBAL_SCOPE.at(name);
 				}
 				else
 				{
-					Error("NameError(Interpreter): unknown variable '" + var + "'.");
+					Error("NameError(Interpreter): variable " + name + " does not have a assigned value.");
 				}
 			}
 			// is a type declaration
@@ -256,9 +264,8 @@ private:
 		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"));
 	}
 
-
 private:
-	Parser m_parser;
 	TOKEN_STRING_MAP GLOBAL_SCOPE;
+	SymbolTable m_symbolTable;
 };
 

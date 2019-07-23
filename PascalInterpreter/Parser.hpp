@@ -18,22 +18,13 @@ class Parser
 {
 public:
 	Parser() :m_pAST(nullptr) {};
-	explicit Parser(std::string text) : m_text(text), m_pAST(nullptr)
-	{
-	}
 	virtual ~Parser()
 	{
 	}
 	void Reset()
 	{
 		m_pAST.reset();
-		m_text = "\0";
 	}
-	void SetText(std::string text)
-	{
-		m_text = text;
-	}
-
 
 protected:
 	/*
@@ -200,14 +191,17 @@ protected:
 	*/
 	vector<SHARE_AST> GetStatementsList()
 	{
+		bool flag = true;
 		auto result = GetStatement();
 		std::vector<SHARE_AST> result_list;
 		result_list.push_back(result);
-		
-		while ((m_CurrentToken->GetType() == SEMI))
+
+		while (flag)
 		{
 			ConsumeTokenType(SEMI);
-			result_list.push_back(GetStatement());
+			result = GetStatement();
+			result_list.push_back(result);
+			flag = (dynamic_pointer_cast<Empty_Op>(result) == nullptr);
 		}
 		return result_list;
 	}
@@ -350,16 +344,15 @@ public:
 	Functionality: parse the input text (should be a program format) into AST
 	Return: pointer constant to the AST instance
 	*/
-	SHARE_AST GetProgramAST()
+	SHARE_AST GetProgramAST(const Lexer& lexer)
 	{
-		m_lexer = Lexer(m_text);
+		m_lexer = lexer;
 		m_CurrentToken = m_lexer.GetNextToken();
 		m_pAST = GetProgram();
 		return m_pAST;
 	}
 
 private:
-	std::string m_text;
 	Lexer m_lexer;
 	SHARE_TOKEN_STRING m_CurrentToken;
 	SHARE_AST m_pAST;

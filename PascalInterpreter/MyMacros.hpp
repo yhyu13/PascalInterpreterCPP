@@ -34,6 +34,8 @@ using namespace std;
 //----------------------------------------------------------------------------------------------
 #define TOKEN_STRING_MAP std::map<std::string, SHARE_TOKEN_STRING>
 #define TOKEN_STRING_PAIR std::pair<std::string, SHARE_TOKEN_STRING>
+#define SYMBOL_MAP std::map<std::string, VarSymbol>
+#define SYMBOL_PAIR std::pair<std::string, VarSymbol>
 
 //----------------------------------------------------------------------------------------------
 #define MAKE_SHARE_STRING(var) std::make_shared<std::string>(var)

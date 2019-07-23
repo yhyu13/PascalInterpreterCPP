@@ -62,5 +62,8 @@
     <ClInclude Include="MyDebug.hpp">
       <Filter>Header Files\My</Filter>
     </ClInclude>
+    <ClInclude Include="Symbol.hpp">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -29,12 +29,29 @@ int main()
 			{
 				try
 				{
+
+
+					//auto int_type = BuiltInTypeSymbol(INTEGER);
+					//auto float_type = BuiltInTypeSymbol(FLOAT);
+
+					//auto x = VarSymbol("x", int_type);
+					//auto x2 = VarSymbol("x", float_type);
+					//auto y = VarSymbol("y", float_type);
+
+					//auto symtab = SymbolTable();
+					//symtab.define(x);
+					//symtab.PrintTable();
+					//symtab.define(y);
+					//symtab.PrintTable();
+					//symtab.define(x2);
+					//symtab.PrintTable();
+
 					std::string file;
 					std::string LINE;
 					std::ifstream infile(PWD + filename + ".txt");
 					if (!infile)
 					{
-						std::cout <<"'"<< filename <<"'" <<" does not exist in the currenty working directory. Input a existed .txt file instead." << std::endl;
+						std::cout << "'" << filename << "'" << " does not exist in the currenty working directory. Input a existed .txt file instead." << std::endl;
 						continue;
 					}
 
@@ -45,13 +62,13 @@ int main()
 					}
 					infile.close();
 
-					//auto parser = Parser(file);
-					//auto ast = parser.GetProgramAST();
-					//Myprintln(ast);
+					auto lexer = Lexer(file);
+					auto parser = Parser();
+					parser.Reset();
+					auto tree = parser.GetProgramAST(lexer);
 					auto inter = Interpreter();
 					inter.Reset();
-					inter.SetText(file);
-					inter.InterpretProgram();
+					inter.InterpretProgram(tree);
 					inter.PrintVaribalesMap();
 				}
 				catch (const MyExceptions::InterpreterExecption& e)

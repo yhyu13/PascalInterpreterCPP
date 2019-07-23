@@ -150,7 +150,7 @@ public:
 
 	std::string GetVarName() const noexcept
 	{
-		return m_left->GetToken()->ToString();
+		return *(m_left->GetToken()->GetValue());
 	}
 
 	SHARE_AST GetLeft() const noexcept
@@ -317,6 +317,14 @@ public:
 	SHARE_AST GetType() const noexcept
 	{
 		return m_type;
+	}
+	std::string GetVarString() const noexcept
+	{
+		return *(GetVar()->GetToken()->GetValue());
+	}
+	std::string GetTypeString() const noexcept
+	{
+		return *(GetType()->GetToken()->GetValue());
 	}
 	std::string ToString() const noexcept override
 	{

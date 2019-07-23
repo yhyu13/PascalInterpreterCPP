@@ -164,6 +164,7 @@
     <ClInclude Include="MyMacros.hpp" />
     <ClInclude Include="Parser.hpp" />
     <ClInclude Include="MyTemplates.hpp" />
+    <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="Token.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

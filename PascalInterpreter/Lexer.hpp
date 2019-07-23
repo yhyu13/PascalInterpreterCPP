@@ -15,6 +15,13 @@ public:
 	}
 	virtual ~Lexer() {};
 
+	void Reset() noexcept
+	{
+		m_text = "";
+		m_pos = 0;
+		m_CurrentChar = 0;
+	}
+
 protected:
 	/*
 	Funtionality: helper function to throw exception with a specific message

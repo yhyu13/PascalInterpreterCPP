@@ -5,6 +5,7 @@
 #include "MyExceptions.hpp"
 #include "MyTemplates.hpp"
 
+#include "Symbol.hpp"
 #include "Token.hpp"
 #include "AST.hpp"
 #include "Lexer.hpp"
