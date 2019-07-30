@@ -90,7 +90,7 @@ NumOp_code GetEnumNumOp(std::string const& op)
 
 //----------------------------------------------------------------------------------------------
 #define MAKE_SHARE_STRING(var) std::make_shared<std::string>(var)
-#define MAKE_SHARE_TOKEN(type,var) std::make_shared<Token<decltype(var)>>(type,var)
+#define MAKE_SHARE_TOKEN(type,var,pos) std::make_shared<Token<decltype(var)>>(type,var,pos)
 #define MAKE_SHARE_AST(token) std::make_shared<AST>(token)
 #define MAKE_SHARE_UNARY_AST(op, expr) std::make_shared<UnaryOp_AST>(op, expr)
 #define MAKE_SHARE_BINARY_AST(left, right, op) std::make_shared<BinaryOp_AST>(left, right, op)

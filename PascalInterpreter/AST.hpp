@@ -15,7 +15,7 @@ public:
 	explicit AST(SHARE_TOKEN_STRING token)
 	{
 		(check_is_shared_ptr(token)) ? m_token = token : 
-			throw MyExceptions::InterpreterExecption("token passed to a AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("token passed to a AST constructor must be a shared_ptr type.");
 	}
 	virtual SHARE_TOKEN_STRING GetToken() const noexcept
 	{
@@ -32,7 +32,7 @@ private:
 class Empty_AST : public AST
 {
 public:
-	Empty_AST() : AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"))) {};
+	Empty_AST() : AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0)) {};
 	std::string ToString() const noexcept override
 	{
 		return "Empty_AST : () ";
@@ -45,9 +45,9 @@ public:
 	explicit UnaryOp_AST(SHARE_TOKEN_STRING op, SHARE_AST expr)
 	{
 		(check_is_shared_ptr(op)) ? m_op = op :
-			throw MyExceptions::InterpreterExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(expr)) ? m_expr = expr :
-			throw MyExceptions::InterpreterExecption("expr passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 	}
 	~UnaryOp_AST() noexcept override {};
 
@@ -74,11 +74,11 @@ public:
 	explicit BinaryOp_AST(SHARE_AST left, SHARE_AST right, SHARE_AST op)
 	{
 		(check_is_shared_ptr(left)) ? m_left = left :
-			throw MyExceptions::InterpreterExecption("left passed to a BinaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("left passed to a BinaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(right)) ? m_right = right :
-			throw MyExceptions::InterpreterExecption("right passed to a BinaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("right passed to a BinaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(op)) ? m_op = op :
-			throw MyExceptions::InterpreterExecption("op passed to a BinaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a BinaryOp_AST constructor must be a shared_ptr type.");
 	}
 	~BinaryOp_AST() noexcept override {};
 	SHARE_AST GetLeft() const noexcept
@@ -144,11 +144,11 @@ public:
 	explicit Assign_AST(SHARE_AST left, SHARE_AST right, SHARE_AST op)
 	{
 		(check_is_shared_ptr(left)) ? m_left = left :
-			throw MyExceptions::InterpreterExecption("left passed to a Assign constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("left passed to a Assign constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(right)) ? m_right = right :
-			throw MyExceptions::InterpreterExecption("right passed to a Assign constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("right passed to a Assign constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(op)) ? m_op = op :
-			throw MyExceptions::InterpreterExecption("op passed to a Assign constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a Assign constructor must be a shared_ptr type.");
 	}
 	~Assign_AST() noexcept override {};
 
@@ -187,9 +187,9 @@ public:
 	explicit Program_AST(SHARE_AST name, SHARE_AST block)
 	{
 		(check_is_shared_ptr(name)) ? m_name = name :
-			throw MyExceptions::InterpreterExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(block)) ? m_block = block :
-			throw MyExceptions::InterpreterExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
 	}
 	~Program_AST() noexcept override {};
 
@@ -221,9 +221,9 @@ public:
 	explicit Procedure_AST(SHARE_AST name, SHARE_AST block)
 	{
 		(check_is_shared_ptr(name)) ? m_name = name :
-			throw MyExceptions::InterpreterExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(block)) ? m_block = block :
-			throw MyExceptions::InterpreterExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
 	}
 	~Procedure_AST() noexcept override {};
 
@@ -255,9 +255,9 @@ public:
 	explicit Block_AST(SHARE_AST declaration, SHARE_AST compound)
 	{
 		(check_is_shared_ptr(declaration)) ? m_declaration = declaration :
-			throw MyExceptions::InterpreterExecption("op passed to a Block_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a Block_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(compound)) ? m_compound = compound :
-			throw MyExceptions::InterpreterExecption("expr passed to a Block_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a Block_AST constructor must be a shared_ptr type.");
 	}
 	~Block_AST() noexcept override {};
 
@@ -346,9 +346,9 @@ public:
 	explicit VarDecl_AST(SHARE_AST Var, SHARE_AST Type)
 	{
 		(check_is_shared_ptr(Var)) ? m_var = Var :
-			throw MyExceptions::InterpreterExecption("op passed to a VarDecal_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a VarDecal_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(Type)) ? m_type = Type :
-			throw MyExceptions::InterpreterExecption("expr passed to a VarDecal_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a VarDecal_AST constructor must be a shared_ptr type.");
 	}
 	~VarDecl_AST() noexcept override {};
 

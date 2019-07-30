@@ -9,17 +9,33 @@ using namespace std;
 class Lexer
 {
 public:
-	Lexer() : m_text(""), m_pos(0), m_CurrentChar(0) {};
-	explicit Lexer(std::string text) : m_text(text), m_pos(0), m_CurrentChar(text[0])
-	{
-	}
+	Lexer()
+		:
+		m_text("\0"),
+		m_pos(0),
+		m_CurrentChar('\0'),
+		m_sfd(nullptr)
+	{}
 	virtual ~Lexer() {};
 
 	void Reset() noexcept
 	{
 		m_text = "";
 		m_pos = 0;
-		m_CurrentChar = 0;
+		m_CurrentChar = '\0';
+		m_sfd = nullptr;
+	}
+
+	void SetText(std::string text) noexcept
+	{
+		m_text = text;
+		m_pos = 0;
+		m_CurrentChar = m_text[m_pos];
+	}
+
+	void SetSFD(MyDebug::SrouceFileDebugger* sfd) noexcept
+	{
+		m_sfd = sfd;
 	}
 
 protected:
@@ -28,18 +44,15 @@ protected:
 	*/
 	inline void Error(const std::string& msg)
 	{
-		throw MyExceptions::InterpreterExecption(msg);
+		throw MyExceptions::MsgExecption(msg);
 	}
 
 	/*
-	Functionality: helper function to match current token type with labeled token type
+	Funtionality: helper function to throw exception with a specific message and source file location
 	*/
-	inline void CheckCurrentTokenType(std::string target, std::string label)
+	inline void ErrorSFD(const std::string& msg)
 	{
-		if (target != label)
-		{
-			Error("SyntaxError(lexer): token is type " + target + " but it should be type " + label + ".\n");
-		}
+		throw MyExceptions::MsgExecption(msg, m_sfd, m_pos);
 	}
 
 	/*
@@ -106,6 +119,7 @@ protected:
 	{
 		std::string charBuffer = "";
 		bool bDecimal = false;
+		unsigned int _pos = m_pos;
 
 		if (m_CurrentChar == '.')
 			charBuffer == "0";
@@ -115,7 +129,7 @@ protected:
 			if (m_CurrentChar == '.')
 			{
 				if (bDecimal)
-					Error("SynatxError(lexer): multiple decimals in number.");
+					ErrorSFD("SynatxError(lexer): multiple decimals in number.");
 				else
 					bDecimal = true;
 			}
@@ -124,8 +138,8 @@ protected:
 			advance_currentChar();
 		}
 
-		return (bDecimal)? MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(charBuffer)) :
-			MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(charBuffer));
+		return (bDecimal)? MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(charBuffer), _pos) :
+			MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(charBuffer), _pos);
 	}
 
 	/*
@@ -136,6 +150,7 @@ protected:
 	{
 		SHARE_TOKEN_STRING result;
 		std::string charBuffer = "";
+		unsigned int _pos = m_pos;
 		while ((m_CurrentChar == '_' || std::isalnum(m_CurrentChar)) && m_CurrentChar != '\0')
 		{
 			charBuffer += MyTemplates::Str(m_CurrentChar);
@@ -144,15 +159,15 @@ protected:
 
 		if (ITEM_IN_VEC(charBuffer, reserverd_keywords))
 		{
-			result = MAKE_SHARE_TOKEN(charBuffer, MAKE_SHARE_STRING(charBuffer));
+			result = MAKE_SHARE_TOKEN(charBuffer, MAKE_SHARE_STRING(charBuffer), _pos);
 		}
 		else if (ITEM_IN_VEC(charBuffer, type_keywords))
 		{
-			result = MAKE_SHARE_TOKEN(TYPE, MAKE_SHARE_STRING(charBuffer));
+			result = MAKE_SHARE_TOKEN(TYPE, MAKE_SHARE_STRING(charBuffer), _pos);
 		}
 		else
 		{
-			result = MAKE_SHARE_TOKEN(ID, MAKE_SHARE_STRING(charBuffer));
+			result = MAKE_SHARE_TOKEN(ID, MAKE_SHARE_STRING(charBuffer), _pos);
 		}
 		return result;
 	}
@@ -196,53 +211,53 @@ public:
 				{
 					advance_currentChar();
 					advance_currentChar();
-					return MAKE_SHARE_TOKEN(ASSIGN, MAKE_SHARE_STRING(":="));
+					return MAKE_SHARE_TOKEN(ASSIGN, MAKE_SHARE_STRING(":="),m_pos-2);
 				}
 				else
 				{
 					advance_currentChar();
-					return MAKE_SHARE_TOKEN(COLON, MAKE_SHARE_STRING(":"));
+					return MAKE_SHARE_TOKEN(COLON, MAKE_SHARE_STRING(":"), m_pos-1);
 				}
 			}
 			else if (m_CurrentChar == ',')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(COMMA, MAKE_SHARE_STRING(","));
+				return MAKE_SHARE_TOKEN(COMMA, MAKE_SHARE_STRING(","), m_pos-1);
 			}
 			// Semi colon segements statements
 			else if (m_CurrentChar == ';')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(SEMI, MAKE_SHARE_STRING(";"));
+				return MAKE_SHARE_TOKEN(SEMI, MAKE_SHARE_STRING(";"), m_pos-1);
 			}
-			// Every program ends witha '.'
+			// Every program ends with a '.'
 			else if (m_CurrentChar == '.')
 			{
-				if (!std::isdigit(peek_nextChar()))
-				{
-					advance_currentChar();
-					return MAKE_SHARE_TOKEN(DOT, MAKE_SHARE_STRING("."));
-				}
 				// a = .4 is a vaild assignment, a is now equals to 0.4
-				else
+				if (std::isdigit(peek_nextChar()))
 				{
 					return GetDecimalNumberToken();
+				}
+				else
+				{
+					advance_currentChar();
+					return MAKE_SHARE_TOKEN(DOT, MAKE_SHARE_STRING("."), m_pos-1);
 				}
 			}
 			else if (m_CurrentChar == '+')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(PLUS, MAKE_SHARE_STRING("+"));
+				return MAKE_SHARE_TOKEN(PLUS, MAKE_SHARE_STRING("+"), m_pos-1);
 			}
 			else if (m_CurrentChar == '-')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(MINUS, MAKE_SHARE_STRING("-"));
+				return MAKE_SHARE_TOKEN(MINUS, MAKE_SHARE_STRING("-"), m_pos-1);
 			}
 			else if (m_CurrentChar == '*')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(MUL, MAKE_SHARE_STRING("*"));
+				return MAKE_SHARE_TOKEN(MUL, MAKE_SHARE_STRING("*"), m_pos-1);
 			}
 			else if (m_CurrentChar == '/')
 			{
@@ -251,32 +266,32 @@ public:
 				{
 					advance_currentChar();
 					advance_currentChar();
-					return MAKE_SHARE_TOKEN(INT_DIV, MAKE_SHARE_STRING("//"));
+					return MAKE_SHARE_TOKEN(INT_DIV, MAKE_SHARE_STRING("//"), m_pos-2);
 				}
 				else
 				{
 					advance_currentChar();
-					return MAKE_SHARE_TOKEN(DIV, MAKE_SHARE_STRING("/"));
+					return MAKE_SHARE_TOKEN(DIV, MAKE_SHARE_STRING("/"), m_pos-1);
 				}
 			}
 			else if (m_CurrentChar == '(')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(LEFT_PARATHESES, MAKE_SHARE_STRING("("));
+				return MAKE_SHARE_TOKEN(LEFT_PARATHESES, MAKE_SHARE_STRING("("), m_pos-1);
 			}
 			else if (m_CurrentChar == ')')
 			{
 				advance_currentChar();
-				return MAKE_SHARE_TOKEN(RIGHT_PARATHESES, MAKE_SHARE_STRING(")"));
+				return MAKE_SHARE_TOKEN(RIGHT_PARATHESES, MAKE_SHARE_STRING(")"), m_pos-1);
 			}
 			// No known token returned, raise excpetion.
 			else
 			{
-				Error("NameError(lexer): unknown keyword: '" + MyTemplates::Str(m_CurrentChar) + "'.");
+				ErrorSFD("NameError(lexer): unknown keyword: '" + MyTemplates::Str(m_CurrentChar) + "'.");
 			}
 		}
 		// Reaching EOF
-		return MAKE_SHARE_TOKEN(__EOF__, MAKE_SHARE_STRING("\0"));
+		return MAKE_SHARE_TOKEN(__EOF__, MAKE_SHARE_STRING("\0"), m_pos-1);
 	}
 
 private:
@@ -285,4 +300,6 @@ private:
 	char m_CurrentChar;
 	std::vector<std::string> reserverd_keywords = { BEGIN , END , PROGRAM, PROCEDURE, VAR};
 	std::vector<std::string> type_keywords = { INTEGER, FLOAT };
+
+	MyDebug::SrouceFileDebugger* m_sfd;
 };

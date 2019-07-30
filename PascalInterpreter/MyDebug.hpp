@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include "MyTemplates.hpp"
-#include "MyExceptions.hpp"
 using namespace std;
 
 #ifdef _DEBUG 
@@ -17,48 +16,67 @@ using namespace std;
 #define DEBUG_RUN(x)
 #endif
 
-// TODO: Unit Testing
-class SrouceFileDebugger
+namespace MyDebug
 {
-public:
-	SrouceFileDebugger() {};
-	explicit SrouceFileDebugger(std::string filename, std::string oneliner, std::vector<std::string> vec)
-		:
-		m_filename(filename),
-		m_oneliner(oneliner),
-		m_vec(vec)
+	// TODO: Unit Testing
+	class SrouceFileDebugger
 	{
-	}
-
-	void DebugPrint(unsigned int pos)
-	{
-
-		if (pos > (m_oneliner.size() - 1))
+	public:
+		SrouceFileDebugger() {};
+		explicit SrouceFileDebugger(std::string filename, std::string oneliner, std::vector<std::string> vec)
+			:
+			m_filename(filename),
+			m_oneliner(oneliner),
+			m_vec(vec)
 		{
-			throw MyExceptions::InterpreterExecption("DebugError(SrouceFileDebugger): position " + MyTemplates::Str(pos) \
-				+ " out of size of " + MyTemplates::Str(m_oneliner.size()) + ".");
 		}
 
-		unsigned int line = 0;
-		unsigned int col = 0;
-
-		for (unsigned int i = 0; i < pos; i++)
+		std::string GetDebugString(unsigned int pos)
 		{
-			col++;
-			if (m_oneliner[i] == '\n')
+
+			if (pos > (m_oneliner.size() - 1))
 			{
-				line++;
-				col = 0;
+				throw std::runtime_error("DebugError(SrouceFileDebugger): position " + MyTemplates::Str(pos) \
+					+ " out of size of " + MyTemplates::Str(m_oneliner.size()) + ".");
 			}
-		}
-		DEBUG_MSG("File---> '" + m_filename + "' at line " + MyTemplates::Str(line) + " col " + MyTemplates::Str(col));
-		DEBUG_MSG(std::string(8,' ') + m_vec[line]);
-		DEBUG_MSG(std::string(8 + col, ' ') + "^");
-	}
 
-private:
-	std::string m_filename;
-	std::string m_oneliner;
-	std::vector<std::string> m_vec;
-};
+			unsigned int line = 0;
+			unsigned int col = 0;
+
+			for (unsigned int i = 0; i < pos; i++)
+			{
+				col++;
+				if (m_oneliner[i] == '\n')
+				{
+					line++;
+					col = 0;
+				}
+			}
+
+			return "File---> '" + m_filename + "' at line " + MyTemplates::Str(line) + "\n"  \
+				+ std::string(8, ' ') + m_vec[line] + "\n"  \
+				+ std::string(8 + col, ' ') + "^" + "\n";
+		}
+
+		std::string GetFilename() const noexcept
+		{
+			return m_filename;
+		}
+
+		std::string GetOneliner() const noexcept
+		{
+			return m_oneliner;
+		}
+
+		std::vector<std::string> GetLineVector() const noexcept
+		{
+			return m_vec;
+		}
+
+	private:
+		std::string m_filename;
+		std::string m_oneliner;
+		std::vector<std::string> m_vec;
+	};
+}
 

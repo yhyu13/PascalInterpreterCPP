@@ -73,13 +73,13 @@ public:
 		if (m_symbol_map.find(name) != m_symbol_map.end())
 			return m_symbol_map.at(name);
 		else
-			throw MyExceptions::InterpreterExecption("NameError(SymbolTable): variable "+ name + " does not exist.");
+			throw MyExceptions::MsgExecption("NameError(SymbolTable): variable "+ name + " does not exist.");
 	}
 	void check(std::string name, std::string type)
 	{
 		auto result = lookup(name);
 		if (result.GetType() != type)
-			throw MyExceptions::InterpreterExecption("NameError(SymbolTable): variable " + name + " has type " + result.GetType() \
+			throw MyExceptions::MsgExecption("NameError(SymbolTable): variable " + name + " has type " + result.GetType() \
 				+ " does not match " + type + " .");
 	}
 private:

@@ -17,7 +17,7 @@ public:
 	*/
 	inline void Error(const std::string& msg)
 	{
-		throw MyExceptions::InterpreterExecption(msg);
+		throw MyExceptions::MsgExecption(msg);
 	}
 
 	/*
@@ -42,19 +42,19 @@ public:
 		switch (GetEnumNumOp(op->GetType()))
 		{
 		case ePLUS:
-			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left + (int)_right))) :
-				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left + _right)));
+			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left + (int)_right)), left->GetPos()) :
+				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left + _right)), left->GetPos());
 		case eMINUS:
-			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left - (int)_right))) :
-				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left - _right)));
+			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left - (int)_right)), left->GetPos()) :
+				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left - _right)), left->GetPos());
 		case eMULTIPLY:
-			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left * (int)_right))) :
-				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left * _right)));
+			return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left * (int)_right)), left->GetPos()) :
+				MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left * _right)), left->GetPos());
 		case eDIVIDE:
 			if (_right != 0)
 			{
-				return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right))) :
-					MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left / _right)));
+				return (isInt) ? MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)), left->GetPos()) :
+					MAKE_SHARE_TOKEN(FLOAT, MAKE_SHARE_STRING(MyTemplates::Str(_left / _right)), left->GetPos());
 			}
 			else
 			{
@@ -65,7 +65,7 @@ public:
 			{
 				if (!isInt)
 					Error("SyntaxError: integer devision applied to non-integer type.");
-				return MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)));
+				return MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)), left->GetPos());
 			}
 			else
 			{

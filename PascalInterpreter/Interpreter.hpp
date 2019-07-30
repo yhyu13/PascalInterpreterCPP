@@ -16,12 +16,18 @@ AST Parser Interpreter
 class Interpreter
 {
 public:
-	Interpreter() {};
+	Interpreter(): m_sfd(nullptr) {};
 	virtual ~Interpreter() {};
 	
 	void Reset() noexcept
 	{
 		m_symbolTable.Reset();
+		m_sfd = nullptr;
+	}
+
+	void SetSFD(MyDebug::SrouceFileDebugger* sfd) noexcept
+	{
+		m_sfd = sfd;
 	}
 
 	void PrintVaribalesMap() const noexcept
@@ -38,7 +44,15 @@ private:
 	*/
 	inline void Error(const std::string& msg)
 	{
-		throw MyExceptions::InterpreterExecption(msg);
+		throw MyExceptions::MsgExecption(msg);
+	}
+
+	/*
+	Funtionality: helper function to throw exception with a specific message
+	*/
+	inline void ErrorSFD(const std::string& msg, unsigned int pos)
+	{
+		throw MyExceptions::MsgExecption(msg, m_sfd, pos);
 	}
 
 public:
@@ -55,7 +69,7 @@ private:
 	SHARE_TOKEN_STRING InterpretProgramEntryHelper(SHARE_AST root)
 	{
 		if (!root)
-			Error("ASTError(Interpreter): root of InterpretProgramEntreHelper is null.");
+			Error("ASTError(Interpreter): root of InterpretProgramEntryHelper is null.");
 
 		// Condition: is a program start
 		if (SHARE_PROGRAM_AST root_0 = dynamic_pointer_cast<Program_AST>(root))
@@ -152,27 +166,27 @@ private:
 					if (result->GetValue()->front() == '-')
 					{
 						std::string s(1, result->GetValue()->back());
-						result = MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(s));
+						result = MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(s), result->GetPos());
 					}
 					else
 					{
 						std::string s(*(result->GetValue()));
 						s.insert(0, "-");
-						result = MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(s));
+						result = MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(s), result->GetPos());
 					}
 				}
 				DEBUG_MSG("After Unary handle---> " + result->ToString());
 			} 
 			else
 			{
-				Error("ASTError(Interpreter): " + root_2->ToString() + " on " + result->ToString() + " is not valid.");
+				ErrorSFD("ASTError(Interpreter): " + root_2->ToString() + " on " + result->ToString() + " is not valid.",root_2->GetToken()->GetPos());
 			}
 			return result;
 		}
 		// Condition: is a empty statement
 		else if (SHARE_EMPTY_AST root_3 = dynamic_pointer_cast<Empty_AST>(root))
 		{
-			return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"));
+			return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0);
 		}
 		// Condition: is a assign statement
 		else if (SHARE_ASSIGN_AST root_4 = dynamic_pointer_cast<Assign_AST>(root))
@@ -200,7 +214,7 @@ private:
 				}
 				else
 				{
-					Error("SymbolError(Interpreter): variable " + name + " used before reference.");
+					ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", root->GetToken()->GetPos());
 				}
 			}
 			// is a type declaration
@@ -216,12 +230,14 @@ private:
 			}
 		}
 
-		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"));
+		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0);
 	}
 
 private:
 	TOKEN_STRING_MAP GLOBAL_SCOPE;
 	SymbolTable m_symbolTable;
 	Operator m_opeartor;
+
+	MyDebug::SrouceFileDebugger* m_sfd;
 };
 

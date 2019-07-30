@@ -13,7 +13,7 @@ public:
 	explicit AST(T token)
 	{
 		(check_is_shared_ptr(token)) ? m_token = token :
-			throw MyExceptions::InterpreterExecption("Token passed to a AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("Token passed to a AST constructor must be a shared_ptr type.");
 	}
 	virtual T GetToken() const
 	{
@@ -34,9 +34,9 @@ public:
 	explicit UnaryOp_AST(T op, W expr)
 	{
 		(check_is_shared_ptr(op)) ? m_op = op :
-			throw MyExceptions::InterpreterExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(expr)) ? m_expr = expr :
-			throw MyExceptions::InterpreterExecption("expr passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("expr passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 	}
 	~UnaryOp_AST() override {};
 
@@ -64,11 +64,11 @@ public:
 	explicit BinaryOp_AST(T left, W right, M op)
 	{
 		(check_is_shared_ptr(left)) ? m_left = left :
-			throw MyExceptions::InterpreterExecption("left passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("left passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(right)) ? m_right = right :
-			throw MyExceptions::InterpreterExecption("right passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("right passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(op)) ? m_op = op :
-			throw MyExceptions::InterpreterExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("op passed to a UnaryOp_AST constructor must be a shared_ptr type.");
 	}
 	~BinaryOp_AST() override {};
 	T GetLeft() const

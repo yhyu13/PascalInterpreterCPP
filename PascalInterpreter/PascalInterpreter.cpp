@@ -64,21 +64,28 @@ int main()
 					}
 					infile.close();
 
-					auto sfd = SrouceFileDebugger(filename + ".txt", src_file_oneliner, src_file_vec);
-					sfd.DebugPrint(0);
+					auto sfd = MyDebug::SrouceFileDebugger(filename + ".txt", src_file_oneliner, src_file_vec);
 
-					auto lexer = Lexer(src_file_oneliner);
+					auto lexer = Lexer();
+					lexer.Reset();
+					lexer.SetText(sfd.GetOneliner());
+					lexer.SetSFD(&sfd);
+
 					auto parser = Parser();
 					parser.Reset();
-					auto tree = parser.GetProgramAST(lexer);
+					parser.SetLexer(&lexer);
+					parser.SetSFD(&sfd);
+					auto root_tree = parser.GetProgramAST();
+
 					auto inter = Interpreter();
 					inter.Reset();
-					inter.InterpretProgram(tree);
+					inter.SetSFD(&sfd);
+					inter.InterpretProgram(root_tree);
 					inter.PrintVaribalesMap();
 				}
-				catch (const MyExceptions::InterpreterExecption& e)
+				catch (const MyExceptions::MsgExecption& e)
 				{
-					DEBUG_MSG(e.what());
+					std::cerr << e.what() << std::endl;
 				}
 				catch (const std::exception& e)
 				{

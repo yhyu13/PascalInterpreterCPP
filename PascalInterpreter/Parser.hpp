@@ -17,13 +17,32 @@
 class Parser
 {
 public:
-	Parser() :m_pAST(nullptr) {};
-	virtual ~Parser()
-	{
-	}
+	Parser()
+		:
+		m_lexer(nullptr),
+		m_pAST(nullptr),
+		m_CurrentToken(nullptr),
+		m_sfd(nullptr)
+	{}
+
+	virtual ~Parser() {};
 	void Reset()
 	{
+		m_lexer = nullptr;
 		m_pAST.reset();
+		m_CurrentToken.reset();
+		m_sfd = nullptr;
+	}
+
+	void SetLexer(Lexer* lexer) noexcept
+	{
+		m_lexer = lexer;
+		m_CurrentToken = m_lexer->GetNextToken();
+	}
+
+	void SetSFD(MyDebug::SrouceFileDebugger* sfd) noexcept
+	{
+		m_sfd = sfd;
 	}
 
 protected:
@@ -32,13 +51,15 @@ protected:
 	*/
 	inline void Error(const std::string& msg)
 	{
-		throw MyExceptions::InterpreterExecption(msg);
+		throw MyExceptions::MsgExecption(msg);
 	}
 
-	inline void PtrError(void* ptr, const std::string& msg)
+	/*
+	Funtionality: helper function to throw exception with a specific message
+	*/
+	inline void ErrorSFD(const std::string& msg)
 	{
-		if (!ptr)
-			throw MyExceptions::InterpreterExecption(msg);
+		throw MyExceptions::MsgExecption(msg, m_sfd, m_CurrentToken->GetPos());
 	}
 
 	/*
@@ -47,7 +68,7 @@ protected:
 	*/
 	bool ConsumeToken()
 	{
-		m_CurrentToken = m_lexer.GetNextToken();
+		m_CurrentToken = m_lexer->GetNextToken();
 		return m_CurrentToken->GetType() != __EOF__;
 	}
 	/*
@@ -59,12 +80,12 @@ protected:
 
 		if (m_CurrentToken->GetType() == type)
 		{
-			m_CurrentToken = m_lexer.GetNextToken();
+			m_CurrentToken = m_lexer->GetNextToken();
 			return m_CurrentToken->GetType() != __EOF__;
 		}
 		else
 		{
-			Error("SynatxError(parser): should comsume " + type + ", instead, comsuming " + m_CurrentToken->ToString());
+			ErrorSFD("SynatxError(parser): should comsume " + type + ", instead, comsuming " + m_CurrentToken->ToString());
 		}
 	}
 	/*
@@ -76,7 +97,7 @@ protected:
 
 		if (m_CurrentToken->GetType() == type)
 		{
-			m_CurrentToken = m_lexer.GetNextToken();
+			m_CurrentToken = m_lexer->GetNextToken();
 			return m_CurrentToken->GetType() != __EOF__;
 		}
 		else
@@ -94,7 +115,9 @@ protected:
 		// Declared a prorgam name
 		if (TryConsumeTokenType(PROGRAM))
 		{
+			
 			auto programName = GetVariable();
+			
 			ConsumeTokenType(SEMI);
 			auto block = GetBlock();
 			ConsumeTokenType(DOT);
@@ -311,7 +334,7 @@ protected:
 		}
 		else
 		{
-			Error("SynatxError(parser): unknown factor: " + token->GetType() + ".");
+			ErrorSFD("SynatxError(parser): unknown factor: " + token->GetType() + ".");
 		}
 	}
 	/*
@@ -359,20 +382,20 @@ public:
 	Functionality: parse the input text (should be a program format) into AST
 	Return: pointer constant to the AST instance
 	*/
-	SHARE_AST GetProgramAST(const Lexer& lexer)
+	SHARE_AST GetProgramAST()
 	{
-		m_lexer = lexer;
-		m_CurrentToken = m_lexer.GetNextToken();
 		m_pAST = GetProgram();
 		return m_pAST;
 	}
 
 private:
-	Lexer m_lexer;
+	Lexer* m_lexer;
 	SHARE_TOKEN_STRING m_CurrentToken;
 	SHARE_AST m_pAST;
 	std::vector<std::string> token_code_factor = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS , ID, FLOAT };
 	std::vector<std::string> token_code_term = { MUL, DIV, INT_DIV };
 	std::vector<std::string> token_code_expr = { PLUS, MINUS };
+
+	MyDebug::SrouceFileDebugger* m_sfd;
 };
 
