@@ -29,13 +29,13 @@ private:
 	SHARE_TOKEN_STRING m_token;
 };
 
-class Empty_Op : public AST
+class Empty_AST : public AST
 {
 public:
-	Empty_Op() : AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"))) {};
+	Empty_AST() : AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"))) {};
 	std::string ToString() const noexcept override
 	{
-		return "Empty_Op : () ";
+		return "Empty_AST : () ";
 	}
 };
 
@@ -114,6 +114,10 @@ public:
 	void AddStatements(SHARE_AST child) noexcept
 	{
 		m_children.push_back(child);
+	}
+	bool IsEmpty()
+	{
+		return m_children.empty();
 	}
 	std::vector<SHARE_AST> GetAllChildren() const noexcept
 	{
@@ -211,6 +215,40 @@ private:
 	SHARE_AST m_block;
 };
 
+class Procedure_AST : public AST
+{
+public:
+	explicit Procedure_AST(SHARE_AST name, SHARE_AST block)
+	{
+		(check_is_shared_ptr(name)) ? m_name = name :
+			throw MyExceptions::InterpreterExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+		(check_is_shared_ptr(block)) ? m_block = block :
+			throw MyExceptions::InterpreterExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+	}
+	~Procedure_AST() noexcept override {};
+
+	std::string GetName() const noexcept
+	{
+		return *(m_name->GetToken()->GetValue());
+	}
+
+	SHARE_TOKEN_STRING GetToken() const noexcept override
+	{
+		return m_name->GetToken();
+	}
+	SHARE_AST GetBlock() const noexcept
+	{
+		return m_block;
+	}
+	std::string ToString() const noexcept override
+	{
+		return "Procedure: ( " + m_name->ToString() + " , " + m_block->ToString() + " ) ";
+	}
+private:
+	SHARE_AST m_name;
+	SHARE_AST m_block;
+};
+
 class Block_AST : public AST
 {
 public:
@@ -233,7 +271,7 @@ public:
 	}
 	std::string ToString() const noexcept override
 	{
-		return "Program: ( " + m_declaration->ToString() + " , " + m_compound->ToString() + " ) ";
+		return "Block: ( " + m_declaration->ToString() + " , " + m_compound->ToString() + " ) ";
 	}
 private:
 	SHARE_AST m_declaration;
@@ -249,6 +287,10 @@ public:
 	void AddVarDecal(SHARE_AST child) noexcept
 	{
 		m_children.push_back(child);
+	}
+	bool IsEmpty()
+	{
+		return m_children.empty();
 	}
 	std::vector<SHARE_AST> GetAllChildren() const noexcept
 	{
@@ -289,7 +331,7 @@ public:
 		oss << "DeclContainer_AST : ( ";
 		for (auto& child : m_children)
 		{
-			oss << " { " << child->ToString() << " }, ";
+			oss << " { " << child->ToString() << " } ";
 		}
 		oss << " ) ";
 		return oss.str();

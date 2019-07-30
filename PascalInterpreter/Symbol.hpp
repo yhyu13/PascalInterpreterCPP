@@ -59,9 +59,10 @@ public:
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << "SymbolMap contains:\n";
+		std::cout << "SymbolMap contains---> {\n";
 		for (auto it = m_symbol_map.begin(); it != m_symbol_map.end(); it++)
 			std::cout << it->first << " => " << it->second.ToString() << '\n';
+		std::cout << '}' << std::endl;
 	}
 	void define(VarSymbol varSymbol)
 	{

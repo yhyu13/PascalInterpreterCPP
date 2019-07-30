@@ -272,7 +272,7 @@ public:
 			// No known token returned, raise excpetion.
 			else
 			{
-				Error("SynatxError(lexer): unknown keyword: '" + MyTemplates::Str(m_CurrentChar) + "'.");
+				Error("NameError(lexer): unknown keyword: '" + MyTemplates::Str(m_CurrentChar) + "'.");
 			}
 		}
 		// Reaching EOF
@@ -283,6 +283,6 @@ private:
 	std::string m_text;
 	unsigned int m_pos;
 	char m_CurrentChar;
-	std::vector<std::string> reserverd_keywords = { BEGIN , END , PROGRAM, VAR};
+	std::vector<std::string> reserverd_keywords = { BEGIN , END , PROGRAM, PROCEDURE, VAR};
 	std::vector<std::string> type_keywords = { INTEGER, FLOAT };
 };

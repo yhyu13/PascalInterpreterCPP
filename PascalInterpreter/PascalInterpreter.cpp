@@ -46,7 +46,8 @@ int main()
 					//symtab.define(x2);
 					//symtab.PrintTable();
 
-					std::string file;
+					std::vector<std::string> src_file_vec;
+					std::string src_file_oneliner;
 					std::string LINE;
 					std::ifstream infile(PWD + filename + ".txt");
 					if (!infile)
@@ -58,11 +59,15 @@ int main()
 					while (getline(infile, LINE)) // To get you all the lines.
 					{
 						std::cout << LINE << std::endl; // Prints our STRING.
-						file = file + "\n" + LINE;
+						src_file_oneliner += LINE + "\n";
+						src_file_vec.push_back(LINE);
 					}
 					infile.close();
 
-					auto lexer = Lexer(file);
+					auto sfd = SrouceFileDebugger(filename + ".txt", src_file_oneliner, src_file_vec);
+					sfd.DebugPrint(0);
+
+					auto lexer = Lexer(src_file_oneliner);
 					auto parser = Parser();
 					parser.Reset();
 					auto tree = parser.GetProgramAST(lexer);

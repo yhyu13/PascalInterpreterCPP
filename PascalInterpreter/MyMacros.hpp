@@ -10,6 +10,56 @@ MACRO
 #include "MyDebug.hpp"
 using namespace std;
 
+/*
+Token types
+*/
+#define TYPE "TYPE"
+#define INTEGER "INTEGER"
+#define FLOAT "FLOAT"
+
+#define PLUS "PLUS"
+#define MINUS "MINUS"
+#define MUL "MUL"
+#define DIV "DIV"
+#define INT_DIV "INT_DIV"
+#define LEFT_PARATHESES "LEFT_PARATHESES"
+#define RIGHT_PARATHESES "RIGHT_PARATHESES"
+#define COLON "COLON"
+#define COMMA "COMMA"
+
+#define PROGRAM "PROGRAM"
+#define PROCEDURE "PROCEDURE"
+#define VAR "VAR"
+#define BEGIN "BEGIN"
+#define END "END"
+#define DOT "DOT"
+#define ASSIGN "ASSIGN"
+#define SEMI "SEMI"
+#define ID "ID"
+#define EMPTY "EMPTY"
+
+#define __EOF__ "__EOF__"
+
+enum NumOp_code
+{
+	eUNKNOWN = -1,
+	ePLUS,
+	eMINUS,
+	eMULTIPLY,
+	eDIVIDE,
+	eINT_DIV
+};
+
+NumOp_code GetEnumNumOp(std::string const& op)
+{
+	if (op == PLUS) return ePLUS;
+	else if (op == MINUS) return eMINUS;
+	else if (op == MUL) return eMULTIPLY;
+	else if (op == DIV) return eDIVIDE;
+	else if (op == INT_DIV) return eINT_DIV;
+	else return eUNKNOWN;
+}
+
 //----------------------------------------------------------------------------------------------
 #define Myprintln(var) std::cout << var->ToString() << std::endl;
 #define ITEM_IN_VEC(item, vec) (find(vec.begin(), vec.end(), item) != vec.end())
@@ -23,8 +73,9 @@ using namespace std;
 #define SHARE_BINARY_AST std::shared_ptr<BinaryOp_AST>
 #define SHARE_COMPOUND_AST std::shared_ptr<Compound_AST>
 #define SHARE_ASSIGN_AST std::shared_ptr<Assign_AST>
-#define SHARE_EMPTY_AST std::shared_ptr<Empty_Op>
+#define SHARE_EMPTY_AST std::shared_ptr<Empty_AST>
 #define SHARE_PROGRAM_AST std::shared_ptr<Program_AST>
+#define SHARE_PROCEDURE_AST std::shared_ptr<Procedure_AST>
 #define SHARE_BLOCk_AST std::shared_ptr<Block_AST>
 
 #define SHARE_DECLARATION_AST std::shared_ptr<Declaration_AST>
@@ -45,8 +96,9 @@ using namespace std;
 #define MAKE_SHARE_BINARY_AST(left, right, op) std::make_shared<BinaryOp_AST>(left, right, op)
 #define MAKE_SHARE_COMPOUND_AST() std::make_shared<Compound_AST>()
 #define MAKE_SHARE_ASSIGN_AST(left, right, op) std::make_shared<Assign_AST>(left, right, op)
-#define	MAKE_SHARE_EMPTY_AST() std::make_shared<Empty_Op>()
+#define	MAKE_SHARE_EMPTY_AST() std::make_shared<Empty_AST>()
 #define MAKE_SHARE_PROGRAM_AST(name, block) std::make_shared<Program_AST>(name, block)
+#define MAKE_SHARE_PROCEDURE_AST(name, block) std::make_shared<Procedure_AST>(name, block)
 #define MAKE_SHARE_BLOCK_AST(declaration, compound) std::make_shared<Block_AST>(declaration, compound)
 
 #define MAKE_SHARE_DECLARATION_AST() std::make_shared<Declaration_AST>()
@@ -61,8 +113,9 @@ using namespace std;
 #define CREATE_SHARE_BINARY_AST(name, left, right, op) std::shared_ptr<BinaryOp_AST> name(new BinaryOp_AST(left, right, op));
 #define CREATE_SHARE_COMPOUND_AST(name) std::shared_ptr<Compound_AST> name(new Compound_AST());
 #define CREATE_SHARE_ASSIGN_AST(name, left, right, op) std::shared_ptr<Assign_AST> name(new Assign_AST(left, right, op));
-#define CREATE_SHARE_EMPTY_AST(name) std::shared_ptr<Empty_Op> name(new Empty_Op());
+#define CREATE_SHARE_EMPTY_AST(name) std::shared_ptr<Empty_AST> name(new Empty_AST());
 #define CREATE_SHARE_PROGRAM_AST(name, programName, block) std::shared_ptr<Program_AST> name(new Program_AST(programName, block));
+#define CREATE_SHARE_PROCEDURE_AST(name, programName, block) std::shared_ptr<Procedure_AST> name(new Procedure_AST(programName, block));
 #define CREATE_SHARE_BLOCK_AST(name, declaration, compound) std::shared_ptr<Block_AST> name(new Block_AST(declaration, compound));
 
 #define CREATE_SHARE_DECLARATION_AST(name) std::shared_ptr<Declaration_AST> name(new Declaration_AST());

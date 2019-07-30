@@ -162,6 +162,7 @@
     <ClInclude Include="Interpreter.hpp" />
     <ClInclude Include="Lexer.hpp" />
     <ClInclude Include="MyMacros.hpp" />
+    <ClInclude Include="Operator.hpp" />
     <ClInclude Include="Parser.hpp" />
     <ClInclude Include="MyTemplates.hpp" />
     <ClInclude Include="Symbol.hpp" />

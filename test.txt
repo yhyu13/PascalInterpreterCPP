@@ -1,5 +1,4 @@
 PROGRAM LOL;
-
 BEGIN
     BEGIN
         number := 2;

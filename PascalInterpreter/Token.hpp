@@ -3,55 +3,7 @@
 #include <memory>
 #include "MyTemplates.hpp"
 #include "MyExceptions.hpp"
-
-/*
-Token types
-*/
-#define TYPE "TYPE"
-#define INTEGER "INTEGER"
-#define FLOAT "FLOAT"
-
-#define PLUS "PLUS"
-#define MINUS "MINUS"
-#define MUL "MUL"
-#define DIV "DIV"
-#define INT_DIV "INT_DIV"
-#define LEFT_PARATHESES "LEFT_PARATHESES"
-#define RIGHT_PARATHESES "RIGHT_PARATHESES"
-#define COLON "COLON"
-#define COMMA "COMMA"
-
-#define PROGRAM "PROGRAM"
-#define VAR "VAR"
-#define BEGIN "BEGIN"
-#define END "END"
-#define DOT "DOT"
-#define ASSIGN "ASSIGN"
-#define SEMI "SEMI"
-#define ID "ID"
-#define EMPTY "EMPTY"
-
-#define __EOF__ "__EOF__"
-
-enum NumOp_code
-{
-	eUNKNOWN = -1,
-	ePLUS,
-	eMINUS,
-	eMULTIPLY,
-	eDIVIDE,
-	eINT_DIV
-};
-
-NumOp_code GetEnumNumOp(std::string const& op)
-{
-	if (op == PLUS) return ePLUS;
-	else if (op == MINUS) return eMINUS;
-	else if (op == MUL) return eMULTIPLY;
-	else if (op == DIV) return eDIVIDE;
-	else if (op == INT_DIV) return eINT_DIV;
-	else return eUNKNOWN;
-}
+#include "MyMacros.hpp"
 
 /*
 Token class
@@ -61,37 +13,40 @@ class Token
 {
 public:
 
-	Token() : m_type("Undefined"), m_value(nullptr) {};
+	Token() : m_type("Undefined"), m_value(nullptr), m_pos(0) {};
 	explicit Token(std::string type, T value) 
 	{
 		m_type = type;
 		(check_is_shared_ptr(value)) ? m_value = value : 
 			throw MyExceptions::InterpreterExecption("Value passed to a Token constructor must be a shared_ptr type.");
 	}
+	explicit Token(std::string type, T value, unsigned int pos)
+	{
+		m_pos = pos;
+		Token(type, value);
+	}
+
 	virtual ~Token() {};
 
-	std::string ToString() const
+	std::string ToString() const noexcept
 	{
 		return "Token( " + m_type + ", " + MyTemplates::Str(*m_value) + " )";
 	}
-	std::string GetType() const
+	std::string GetType() const noexcept
 	{
 		return m_type;
 	}
-	T GetValue() const
+	T GetValue() const noexcept
 	{
 		return m_value;
 	}
-	void SetType(std::string type)
+	unsigned int GetPos() const noexcept
 	{
-		m_type = type;
-	}
-	void SetValue(T value)
-	{
-		m_value = value;
+		return m_pos;
 	}
 
 private:
 	std::string m_type;
 	T m_value;
+	unsigned int m_pos;
 };

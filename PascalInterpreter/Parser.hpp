@@ -109,34 +109,54 @@ protected:
 		return result;
 	}
 	/*
+		program: PROCEDURE variable SEMI Block DOT
+	*/
+	SHARE_AST GetProcedure()
+	{
+		ConsumeTokenType(PROCEDURE);
+		auto programName = GetVariable();
+		ConsumeTokenType(SEMI);
+
+		auto block = GetBlock();
+
+		return MAKE_SHARE_PROCEDURE_AST(programName, block);
+	}
+	/*
 		Block: Declaration  compound_statement
 	*/
 	SHARE_AST GetBlock()
 	{
 		auto decal = GetDeclaration();
 		auto comp = GetCompoundStatements();
-		CREATE_SHARE_BLOCK_AST(result, decal, comp)
-		return result;
+		return MAKE_SHARE_BLOCK_AST(decal, comp);
 	}
 	/*
 		Declaration: Empty | VAR(variable_declaration SEMI)+
 	*/
 	SHARE_AST GetDeclaration()
 	{
-		// Variable Decalration exists
+		CREATE_SHARE_DECLARATION_AST(results);
 		if (TryConsumeTokenType(VAR))
 		{
-			CREATE_SHARE_DECLARATION_AST(results);
 			while (m_CurrentToken->GetType() == ID)
 			{
 				results->AddVarDecal(GetVariableDeclaration());
 				ConsumeTokenType(SEMI);
 			}
-			return results;
+		}
+		while (m_CurrentToken->GetType() == PROCEDURE)
+		{
+			results->AddVarDecal(GetProcedure());
+			ConsumeTokenType(SEMI);
+		}
+
+		if (results->IsEmpty())
+		{
+			return MAKE_SHARE_EMPTY_AST();
 		}
 		else
 		{
-			return MAKE_SHARE_EMPTY_AST();
+			return results;
 		}
 	}
 	/*
@@ -191,17 +211,15 @@ protected:
 	*/
 	vector<SHARE_AST> GetStatementsList()
 	{
-		bool flag = true;
-		auto result = GetStatement();
+		SHARE_AST result = GetStatement();
 		std::vector<SHARE_AST> result_list;
 		result_list.push_back(result);
 
-		while (flag)
+		while (!dynamic_pointer_cast<Empty_AST>(result))
 		{
 			ConsumeTokenType(SEMI);
 			result = GetStatement();
 			result_list.push_back(result);
-			flag = (dynamic_pointer_cast<Empty_Op>(result) == nullptr);
 		}
 		return result_list;
 	}
@@ -215,18 +233,15 @@ protected:
 		auto token = m_CurrentToken;
 		if (token->GetType() == BEGIN)
 		{
-			auto result = GetCompoundStatements();
-			return result;
+			return GetCompoundStatements();
 		}
 		else if (token->GetType() == ID)
 		{
-			auto result = GetAssignStatement();
-			return result;
+			return GetAssignStatement();
 		}
 		else
 		{
-			auto result = GetEmpty();
-			return result;
+			return GetEmpty();
 		}
 	}
 	/*
