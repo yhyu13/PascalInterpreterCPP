@@ -29,23 +29,6 @@ int main()
 			{
 				try
 				{
-
-
-					//auto int_type = BuiltInTypeSymbol(INTEGER);
-					//auto float_type = BuiltInTypeSymbol(FLOAT);
-
-					//auto x = VarSymbol("x", int_type);
-					//auto x2 = VarSymbol("x", float_type);
-					//auto y = VarSymbol("y", float_type);
-
-					//auto symtab = SymbolTable();
-					//symtab.define(x);
-					//symtab.PrintTable();
-					//symtab.define(y);
-					//symtab.PrintTable();
-					//symtab.define(x2);
-					//symtab.PrintTable();
-
 					std::vector<std::string> src_file_vec;
 					std::string src_file_oneliner;
 					std::string LINE;
@@ -64,24 +47,35 @@ int main()
 					}
 					infile.close();
 
+					// Define SFD
 					auto sfd = MyDebug::SrouceFileDebugger(filename + ".txt", src_file_oneliner, src_file_vec);
 
+					// Define lexer
 					auto lexer = Lexer();
 					lexer.Reset();
 					lexer.SetText(sfd.GetOneliner());
 					lexer.SetSFD(&sfd);
 
+					// Define parser
 					auto parser = Parser();
 					parser.Reset();
 					parser.SetLexer(&lexer);
 					parser.SetSFD(&sfd);
 					auto root_tree = parser.GetProgramAST();
 
+					// Define semantic analyzer
+					auto SA = SemanticAnalyzer();
+					SA.Reset();
+					SA.SetSFD(&sfd);
+					SA.InterpretProgram(root_tree);
+
+					// Define interpreter
 					auto inter = Interpreter();
 					inter.Reset();
 					inter.SetSFD(&sfd);
 					inter.InterpretProgram(root_tree);
-					inter.PrintVaribalesMap();
+					inter.PrintSymbolTable();
+					inter.PrintMemoryTable();
 				}
 				catch (const MyExceptions::MsgExecption& e)
 				{

@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <map>
-#include "MyExceptions.hpp"
+
+#include "Token.hpp"
 
 class Symbol
 {
@@ -59,29 +60,62 @@ public:
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << "SymbolMap contains---> {\n";
+		std::cout << "Symbol table contents\n_____________________\n";
 		for (auto it = m_symbol_map.begin(); it != m_symbol_map.end(); it++)
-			std::cout << it->first << " => " << it->second.ToString() << '\n';
-		std::cout << '}' << std::endl;
+			std::cout << it->first << " => " << it->second.ToString() << std::endl;
 	}
-	void define(VarSymbol varSymbol)
+	bool define(std::string name, VarSymbol var)
 	{
-		m_symbol_map[varSymbol.GetName()] = varSymbol;
+		auto size = m_symbol_map.size();
+		m_symbol_map.insert(SYMBOL_PAIR(name, var));
+		return (size + 1) == m_symbol_map.size();
 	}
 	VarSymbol lookup(std::string name)
 	{
 		if (m_symbol_map.find(name) != m_symbol_map.end())
 			return m_symbol_map.at(name);
 		else
-			throw MyExceptions::MsgExecption("NameError(SymbolTable): variable "+ name + " does not exist.");
+			return VarSymbol("", Symbol());
 	}
-	void check(std::string name, std::string type)
+	bool check(std::string name, std::string type)
 	{
 		auto result = lookup(name);
-		if (result.GetType() != type)
-			throw MyExceptions::MsgExecption("NameError(SymbolTable): variable " + name + " has type " + result.GetType() \
-				+ " does not match " + type + " .");
+		return result.GetType() == type;
 	}
 private:
 	SYMBOL_MAP m_symbol_map;
+};
+
+
+class MemoryTable
+{
+public:
+	MemoryTable() {};
+	virtual ~MemoryTable() noexcept {};
+
+	void Reset() noexcept
+	{
+		m_memory_map.clear();
+	}
+	void PrintTable() noexcept
+	{
+		std::cout << "Memory map contains--->\n{\n";
+		for (auto it = m_memory_map.begin(); it != m_memory_map.end(); it++)
+			std::cout << it->first << " => " << it->second->ToString() << '\n';
+		std::cout << '}' << std::endl;
+	}
+	void define(std::string name, SHARE_TOKEN_STRING value)
+	{
+		m_memory_map[name] = value;
+	}
+	SHARE_TOKEN_STRING lookup(std::string name)
+	{
+		if (m_memory_map.find(name) != m_memory_map.end())
+			return m_memory_map.at(name);
+		else
+			return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
+	}
+
+private:
+	TOKEN_STRING_MAP m_memory_map;
 };

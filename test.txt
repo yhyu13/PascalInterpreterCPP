@@ -1,5 +1,6 @@
-PROGRAM LOL;
+PROGRAM SymTab5;
+    VAR x : INTEGER;
+
 BEGIN
-    BEGIN
-    END;
+    x := y;
 END.
