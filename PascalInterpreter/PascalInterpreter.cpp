@@ -74,8 +74,8 @@ int main()
 					inter.Reset();
 					inter.SetSFD(&sfd);
 					inter.InterpretProgram(root_tree);
-					inter.PrintSymbolTable();
-					inter.PrintMemoryTable();
+					inter.PrintAllSymbolTable();
+					inter.PrintAllMemoryTable();
 				}
 				catch (const MyExceptions::MsgExecption& e)
 				{

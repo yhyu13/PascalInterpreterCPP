@@ -1,6 +1,9 @@
 PROGRAM SymTab5;
-    VAR x : INTEGER;
+VAR 
+    x : INTEGER;
+    y : FLOAT;
 
 BEGIN
+    y := 2;
     x := y;
 END.

@@ -18,10 +18,10 @@ private:
 	std::string m_type;
 };
 
-class BuiltInTypeSymbol : public Symbol
+class TypeSymbol : public Symbol
 {
 public:
-	explicit BuiltInTypeSymbol(std::string type) : Symbol(type) {};
+	explicit TypeSymbol(std::string type) : Symbol(type) {};
 };
 
 
@@ -48,19 +48,39 @@ private:
 	Symbol m_type;
 };
 
-class SymbolTable
+class ScopedSymbolTable
 {
 public:
-	SymbolTable() {};
-	virtual ~SymbolTable() noexcept {};
+	ScopedSymbolTable(): m_scopeName(""),m_scopedLevel(0) {};
+	explicit ScopedSymbolTable(std::string name, unsigned int level)
+		:
+		m_scopeName(name),
+		m_scopedLevel(level)
+	{}
+	virtual ~ScopedSymbolTable() noexcept {};
 
+	void SetNameAndLevel(std::string name, unsigned int level)
+	{
+		m_scopeName = name;
+		m_scopedLevel = level;
+	}
+	std::string GetName() const noexcept
+	{
+		return m_scopeName;
+	}
+	unsigned int GetLevel() const noexcept
+	{
+		return m_scopedLevel;
+	}
 	void Reset() noexcept
 	{
+		m_scopeName = "";
+		m_scopedLevel = 0;
 		m_symbol_map.clear();
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << "Symbol table contents\n_____________________\n";
+		std::cout << ("Symbol table contents--->Name: " + m_scopeName + " Level: " + MyTemplates::Str(m_scopedLevel) + "\n_____________________\n");
 		for (auto it = m_symbol_map.begin(); it != m_symbol_map.end(); it++)
 			std::cout << it->first << " => " << it->second.ToString() << std::endl;
 	}
@@ -77,45 +97,77 @@ public:
 		else
 			return VarSymbol("", Symbol());
 	}
-	bool check(std::string name, std::string type)
+	bool valid(VarSymbol var)
+	{
+		return var.GetName() != "";
+	}
+	bool check(std::string name, MEMORY token)
 	{
 		auto result = lookup(name);
-		return result.GetType() == type;
+		return result.GetType() == token->GetType();
 	}
 private:
 	SYMBOL_MAP m_symbol_map;
+	std::string m_scopeName;
+	unsigned int m_scopedLevel;
 };
 
 
-class MemoryTable
+class ScopedMemoryTable
 {
 public:
-	MemoryTable() {};
-	virtual ~MemoryTable() noexcept {};
+	ScopedMemoryTable(): m_scopeName(""), m_scopedLevel(0) {};
+	explicit ScopedMemoryTable(std::string name, unsigned int level) 
+		: 
+		m_scopeName(name), 
+		m_scopedLevel(level) 
+	{}
+	virtual ~ScopedMemoryTable() noexcept {};
 
+	void SetNameAndLevel(std::string name, unsigned int level)
+	{
+		m_scopeName = name;
+		m_scopedLevel = level;
+	}
+	std::string GetName() const noexcept
+	{
+		return m_scopeName;
+	}
+	unsigned int GetLevel() const noexcept
+	{
+		return m_scopedLevel;
+	}
 	void Reset() noexcept
 	{
+		m_scopeName = "";
+		m_scopedLevel = 0;
 		m_memory_map.clear();
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << "Memory map contains--->\n{\n";
+		std::cout << "Memory map contains--->Name: " + m_scopeName + " Level: " + MyTemplates::Str(m_scopedLevel) + "\n{\n";
 		for (auto it = m_memory_map.begin(); it != m_memory_map.end(); it++)
 			std::cout << it->first << " => " << it->second->ToString() << '\n';
 		std::cout << '}' << std::endl;
 	}
-	void define(std::string name, SHARE_TOKEN_STRING value)
+	void define(std::string name, MEMORY value)
 	{
 		m_memory_map[name] = value;
 	}
-	SHARE_TOKEN_STRING lookup(std::string name)
+	MEMORY lookup(std::string name)
 	{
 		if (m_memory_map.find(name) != m_memory_map.end())
 			return m_memory_map.at(name);
 		else
-			return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
+			return MAKE_EMPTY_MEMORY;
+	}
+	bool valid(MEMORY var)
+	{
+		return var->GetType() != EMPTY;
 	}
 
 private:
-	TOKEN_STRING_MAP m_memory_map;
+	MEMORY_MAP m_memory_map;
+	std::string m_scopeName;
+	unsigned int m_scopedLevel;
 };

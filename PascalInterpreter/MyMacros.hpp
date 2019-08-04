@@ -60,14 +60,15 @@ NumOp_code GetEnumNumOp(std::string const& op)
 	else return eUNKNOWN;
 }
 
-//----------------------------------------------------------------------------------------------
+//Utility----------------------------------------------------------------------------------------------
 #define Myprintln(var) std::cout << var->ToString() << std::endl;
 #define ITEM_IN_VEC(item, vec) (find(vec.begin(), vec.end(), item) != vec.end())
 
 
-//----------------------------------------------------------------------------------------------
+//Share pointer types----------------------------------------------------------------------------------------------
 #define SHARE_STRING std::shared_ptr<std::string>
 #define SHARE_TOKEN_STRING std::shared_ptr<Token<std::shared_ptr<std::string>>>
+
 #define SHARE_AST std::shared_ptr<AST>
 #define SHARE_UNARY_AST std::shared_ptr<UnaryOp_AST>
 #define SHARE_BINARY_AST std::shared_ptr<BinaryOp_AST>
@@ -82,15 +83,10 @@ NumOp_code GetEnumNumOp(std::string const& op)
 #define SHARE_DECLCONTAINER_AST std::shared_ptr<DeclContainer_AST>
 #define SHARE_VARDECL_AST std::shared_ptr<VarDecl_AST>
 
-//----------------------------------------------------------------------------------------------
-#define TOKEN_STRING_MAP std::map<std::string, SHARE_TOKEN_STRING>
-#define TOKEN_STRING_PAIR std::pair<std::string, SHARE_TOKEN_STRING>
-#define SYMBOL_MAP std::map<std::string, VarSymbol>
-#define SYMBOL_PAIR std::pair<std::string, VarSymbol>
-
-//----------------------------------------------------------------------------------------------
+//Share pointer maker----------------------------------------------------------------------------------------------
 #define MAKE_SHARE_STRING(var) std::make_shared<std::string>(var)
 #define MAKE_SHARE_TOKEN(type,var,pos) std::make_shared<Token<decltype(var)>>(type,var,pos)
+
 #define MAKE_SHARE_AST(token) std::make_shared<AST>(token)
 #define MAKE_SHARE_UNARY_AST(op, expr) std::make_shared<UnaryOp_AST>(op, expr)
 #define MAKE_SHARE_BINARY_AST(left, right, op) std::make_shared<BinaryOp_AST>(left, right, op)
@@ -105,9 +101,10 @@ NumOp_code GetEnumNumOp(std::string const& op)
 #define MAKE_SHARE_DECLCONTAINER_AST() std::make_shared<DeclContainer_AST>()
 #define MAKE_SHARE_VARDECL_AST(var, type) std::make_shared<VarDecl_AST>(var, type)
 
-//----------------------------------------------------------------------------------------------
+//Share pointer creator----------------------------------------------------------------------------------------------
 #define CREATE_SHARE_STRING(name, var) std::shared_ptr<std::string> name(new std::string(var));
 #define CREATE_SHARE_TOKEN(name, type, var) std::shared_ptr<Token<std::shared_ptr<std::string>>> name(new Token<std::shared_ptr<std::string>>(type, var));
+
 #define CREATE_SHARE_AST(name, token) std::shared_ptr<AST> name(new AST(token));
 #define CREATE_SHARE_UNARY_AST(name, op, expr) std::shared_ptr<UnaryOp_AST> name(new UnaryOp_AST(op, expr));
 #define CREATE_SHARE_BINARY_AST(name, left, right, op) std::shared_ptr<BinaryOp_AST> name(new BinaryOp_AST(left, right, op));
@@ -121,3 +118,16 @@ NumOp_code GetEnumNumOp(std::string const& op)
 #define CREATE_SHARE_DECLARATION_AST(name) std::shared_ptr<Declaration_AST> name(new Declaration_AST());
 #define CREATE_SHARE_DECLCONTAINER_AST(name) std::shared_ptr<DeclContainer_AST> name(new DeclContainer_AST());
 #define CREATE_SHARE_VARDECL_AST(name, var, type) std::shared_ptr<VarDecl_AST> name(new VarDecl_AST(var, type));
+
+
+//Symbol And Memory----------------------------------------------------------------------------------------------
+#define TOKEN_STRING_MAP std::map<std::string, SHARE_TOKEN_STRING>
+#define TOKEN_STRING_PAIR std::pair<std::string, SHARE_TOKEN_STRING>
+
+#define MEMORY SHARE_TOKEN_STRING
+#define MAKE_EMPTY_MEMORY MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0)
+#define MEMORY_MAP std::map<std::string, MEMORY>
+#define MEMORY_PAIR std::pair<std::string, MEMORY>
+
+#define SYMBOL_MAP std::map<std::string, VarSymbol>
+#define SYMBOL_PAIR std::pair<std::string, VarSymbol>

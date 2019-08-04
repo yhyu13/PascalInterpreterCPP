@@ -32,7 +32,10 @@ private:
 class Empty_AST : public AST
 {
 public:
-	Empty_AST() : AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0)) {};
+	Empty_AST() 
+		: 
+		AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0)) 
+	{}
 	std::string ToString() const noexcept override
 	{
 		return "Empty_AST : () ";

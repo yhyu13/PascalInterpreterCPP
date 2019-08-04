@@ -14,14 +14,7 @@ class Token
 public:
 
 	Token() : m_type("Undefined"), m_value(nullptr), m_pos(0) {};
-	explicit Token(std::string type, T value) 
-	{
-		m_pos = 0;
-		m_type = type;
-		(check_is_shared_ptr(value)) ? m_value = value : 
-			throw MyExceptions::MsgExecption("Value passed to a Token constructor must be a shared_ptr type.");
-	}
-	explicit Token(std::string type, T value, unsigned int pos)
+	explicit Token(std::string type, T value, unsigned int pos = 0)
 	{
 		m_pos = pos;
 		m_type = type;

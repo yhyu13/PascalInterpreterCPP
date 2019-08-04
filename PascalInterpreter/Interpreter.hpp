@@ -60,18 +60,38 @@ public:
 	
 	virtual void Reset() noexcept override
 	{
-		m_symbolTable.Reset();
-		m_sfd = nullptr;
+		for (auto& table : m_memoryTableVec)
+			table.Reset();
+		for (auto& table : m_symoblTableVec)
+			table.Reset();
+		m_memoryTableVec.clear();
+		m_symoblTableVec.clear();
+		m_scopeCounter = 0;
+		m_pMemoryTable = nullptr;
+		m_pSymbolTable = nullptr;
+		m_sfd = nullptr;	
 	}
 
-	void PrintSymbolTable() noexcept
+	void PrintCurrentSymbolTable() noexcept
 	{
-		m_symbolTable.PrintTable();
+		m_pSymbolTable->PrintTable();
 	}
 
-	void PrintMemoryTable() noexcept
+	void PrintCurrentMemoryTable() noexcept
 	{
-		GLOBAL_SCOPE.PrintTable();
+		m_pMemoryTable->PrintTable();
+	}
+
+	void PrintAllSymbolTable() noexcept
+	{
+		for (auto& table : m_symoblTableVec)
+			table.PrintTable();
+	}
+
+	void PrintAllMemoryTable() noexcept
+	{
+		for (auto& table : m_memoryTableVec)
+			table.PrintTable();
 	}
 
 public:
@@ -85,38 +105,115 @@ public:
 	}
 
 protected:
+	inline void UpdateCurrentMemoryTable(ScopedMemoryTable* pMemoryTable)
+	{
+		m_pMemoryTable = pMemoryTable;
+	}
 
+	inline void UpdateCurrentSymbolTable(ScopedSymbolTable* pSymbolTable)
+	{
+		m_pSymbolTable = pSymbolTable;
+	}
+
+	void AddMemoryTable(std::string name, unsigned int level)
+	{
+		if (m_memoryTableVec.empty())
+		{
+			if (level != 1)
+				Error("MemoryError(Interpreter): adding a non-global(level!=1) table to a empty table vector.");
+		}
+		else if (m_memoryTableVec.back().GetLevel() != (level-1))
+		{
+			Error("MemoryError(Interpreter): adding a "+ MyTemplates::Str(level) +" table to a " + MyTemplates::Str(m_memoryTableVec.back().GetLevel()) + " table.");
+		}
+		m_memoryTableVec.push_back(ScopedMemoryTable(name, level));
+		UpdateCurrentMemoryTable(&(m_memoryTableVec.back()));
+	}
+
+	void AddSymbolTable(std::string name, unsigned int level)
+	{
+		if (m_symoblTableVec.empty())
+		{
+			if (level != 1)
+				Error("SymbolError(Interpreter): adding a non-global(level!=1) table to a empty table vector.");
+		}
+		else if (m_symoblTableVec.back().GetLevel() != (level - 1))
+		{
+			Error("SymbolError(Interpreter): adding a " + MyTemplates::Str(level) + " table to a " + MyTemplates::Str(m_symoblTableVec.back().GetLevel()) + " table.");
+		}
+		m_symoblTableVec.push_back(ScopedSymbolTable(name, level));
+		UpdateCurrentSymbolTable(&(m_symoblTableVec.back()));
+	}
+
+	void AddTable(std::string name, unsigned int level = 0)
+	{
+		m_scopeCounter++;
+		if (level != 0 && m_scopeCounter != level)
+			Error("TableError(Interpreter): try to add scope level " + MyTemplates::Str(level) + \
+				" but the last level is " + MyTemplates::Str(m_scopeCounter) + " .");
+		AddMemoryTable(name, m_scopeCounter);
+		AddSymbolTable(name, m_scopeCounter);
+	}
+
+	void PopBackTable()
+	{
+		if ((m_memoryTableVec.size() != m_symoblTableVec.size()) \
+			|| (m_memoryTableVec.back().GetLevel() != m_symoblTableVec.back().GetLevel()))
+		{
+			Error("TableError(Interpreter): memory table vector and symbol table vector has different length.");
+		}
+		else
+		{
+			if (m_memoryTableVec.back().GetLevel() != m_scopeCounter)
+				Error("TableError(Interpreter): try to pop scope level " + MyTemplates::Str(m_scopeCounter) + \
+					" but the last level is " + MyTemplates::Str(m_memoryTableVec.back().GetLevel()) +" .");
+
+			if (m_scopeCounter > 1)
+			{
+				m_memoryTableVec.pop_back();
+				m_symoblTableVec.pop_back();
+				m_scopeCounter--;
+				UpdateCurrentMemoryTable(&(m_memoryTableVec.back()));
+				UpdateCurrentSymbolTable(&(m_symoblTableVec.back()));
+			}
+		}
+	}
+
+	// Define a variable in symbol table
 	inline void SymbolTableDefine(SHARE_VARDECL_AST varDecal)
 	{
 		std::string type = varDecal->GetTypeString();
 		std::string name = varDecal->GetVarString();
-		if (!m_symbolTable.define(name, VarSymbol(name, BuiltInTypeSymbol(type))))
+		if (!m_pSymbolTable->define(name, VarSymbol(name, TypeSymbol(type))))
 			ErrorSFD("SyntaxError(Interpreter): variable declaration already exists.", varDecal->GetVar()->GetToken()->GetPos());
 	}
 
-	inline void SymbolTableLookUp(std::string name, SHARE_TOKEN_STRING token)
+	// Check existence of a variable
+	inline void SymbolTableLookUp(std::string name, MEMORY var)
 	{
-		auto symbol = m_symbolTable.lookup(name);
-		if (symbol.GetName() == "")
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " is an undeclared variable.", token->GetPos());
+		if (!m_pSymbolTable->valid(m_pSymbolTable->lookup(name)))
+			ErrorSFD("SymbolError(Interpreter): variable " + name + " is an undeclared variable.", var->GetPos());
 	}
 
-	inline void SymbolTableCheck(std::string name, SHARE_TOKEN_STRING token)
+	// Check existence of a variable and it has a matched type
+	inline void SymbolTableCheck(std::string name, MEMORY targetVar)
 	{
-		if (!m_symbolTable.check(name, token->GetType()))
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " does not match type " + token->GetType() + " .", token->GetPos());
+		if (!m_pSymbolTable->check(name, targetVar))
+		ErrorSFD("SymbolError(Interpreter): variable " + name + " with type " + m_pSymbolTable->lookup(name).GetType() + " does not match assigned value " + *(targetVar->GetValue()) + " with type " + targetVar->GetType() + " .", targetVar->GetPos());
 	}
 
-	inline void MemoryTableDefine(std::string name, SHARE_TOKEN_STRING token)
+	// Define a variable in memory
+	inline void MemoryTableDefine(std::string name, MEMORY var)
 	{
-		GLOBAL_SCOPE.define(name, token);
+		m_pMemoryTable->define(name, var);
 	}
 
-	inline SHARE_TOKEN_STRING MemoryTableLookUp(std::string name, SHARE_TOKEN_STRING token)
+	// Return the memory a variable has assigned to
+	inline MEMORY MemoryTableLookUp(std::string name, MEMORY var)
 	{
-		auto memory = GLOBAL_SCOPE.lookup(name);
-		if (memory->GetType() == EMPTY)
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", token->GetPos());
+		auto memory = m_pMemoryTable->lookup(name);
+		if (!m_pMemoryTable->valid(memory))
+			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
 		else
 			return memory;
 	}
@@ -189,10 +286,18 @@ protected:
 		}
 	}
 
-
+protected:
 	virtual SHARE_TOKEN_STRING VisitProgram(SHARE_PROGRAM_AST root)
 	{
 		DEBUG_MSG("Running program---> " + root->GetName());
+		AddTable(root->GetName(), 1);
+		return InterpretProgramEntryHelper(root->GetBlock());
+	}
+
+	virtual SHARE_TOKEN_STRING VisitProcedure(SHARE_PROCEDURE_AST root)
+	{
+		DEBUG_MSG("Running procedure---> " + root->GetName());
+		AddTable(root->GetName());
 		return InterpretProgramEntryHelper(root->GetBlock());
 	}
 
@@ -217,13 +322,12 @@ protected:
 							Error("SyntaxError(Interpreter): unknown variable declaration");
 						}
 					}
-					DEBUG_RUN(m_symbolTable.PrintTable());
+					DEBUG_RUN(PrintCurrentSymbolTable());
 				}
 				// Condition: is a procedure start
 				else if (SHARE_PROCEDURE_AST _procedure = dynamic_pointer_cast<Procedure_AST>(decal))
 				{
-					DEBUG_MSG("Running procedure---> " + _procedure->GetName());
-					InterpretProgramEntryHelper(_procedure->GetBlock());
+					VisitProcedure(_procedure);
 				}
 				else
 				{
@@ -236,7 +340,9 @@ protected:
 			DEBUG_MSG("Has no declaration.");
 		}
 		// Process the rest of the program.
-		return InterpretProgramHelper(root->GetCompound());
+		InterpretProgramHelper(root->GetCompound());
+		PopBackTable();
+		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
 	}
 
 	virtual SHARE_TOKEN_STRING VisitCompound(SHARE_COMPOUND_AST root)
@@ -308,7 +414,7 @@ protected:
 		// is variable
 		if (type == ID)
 		{
-			DEBUG_RUN(GLOBAL_SCOPE.PrintTable());
+			DEBUG_RUN(PrintCurrentMemoryTable());
 			std::string name = *(token->GetValue());
 			SymbolTableLookUp(name, token);
 			return MemoryTableLookUp(name, token);
@@ -333,9 +439,17 @@ protected:
 
 	
 protected:
-	MemoryTable GLOBAL_SCOPE;
-	SymbolTable m_symbolTable;
 	Operator m_opeartor;
+
+	unsigned int m_scopeCounter = 0;
+	// Data structure that stores scoped symbol/memory table
+	// The ith table is enclosed by the (i-1)th table
+	std::vector<ScopedMemoryTable> m_memoryTableVec;
+	std::vector<ScopedSymbolTable> m_symoblTableVec;
+
+	// Pointer to the current symbol/memory table
+	ScopedMemoryTable* m_pMemoryTable;
+	ScopedSymbolTable* m_pSymbolTable;
 };
 
 
