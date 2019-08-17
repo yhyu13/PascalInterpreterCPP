@@ -199,7 +199,7 @@ protected:
 	inline void SymbolTableCheck(std::string name, MEMORY targetVar)
 	{
 		if (!m_pSymbolTable->check(name, targetVar))
-		ErrorSFD("SymbolError(Interpreter): variable " + name + " with type " + m_pSymbolTable->lookup(name).GetType() + " does not match assigned value " + *(targetVar->GetValue()) + " with type " + targetVar->GetType() + " .", targetVar->GetPos());
+		ErrorSFD("SymbolError(Interpreter): variable " + name + " with type " + m_pSymbolTable->lookup(name).GetType() + " does not match " + *(targetVar->GetValue()) + " with type " + targetVar->GetType() + " .", targetVar->GetPos());
 	}
 
 	// Define a variable in memory

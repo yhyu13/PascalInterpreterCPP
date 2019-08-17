@@ -3,6 +3,7 @@
 #include <map>
 
 #include "Token.hpp"
+#include "AST.hpp"
 
 class Symbol
 {
@@ -80,9 +81,10 @@ public:
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << ("Symbol table contents--->Name: " + m_scopeName + " Level: " + MyTemplates::Str(m_scopedLevel) + "\n_____________________\n");
+		std::cout << ("Scoped symbol table\nScope Name    : " + m_scopeName + "\nScope Level   : " + MyTemplates::Str(m_scopedLevel) + "\n_____________________\n");
 		for (auto it = m_symbol_map.begin(); it != m_symbol_map.end(); it++)
 			std::cout << it->first << " => " << it->second.ToString() << std::endl;
+		std::cout << "" << std::endl;
 	}
 	bool define(std::string name, VarSymbol var)
 	{
@@ -145,7 +147,7 @@ public:
 	}
 	void PrintTable() noexcept
 	{
-		std::cout << "Memory map contains--->Name: " + m_scopeName + " Level: " + MyTemplates::Str(m_scopedLevel) + "\n{\n";
+		std::cout << ("Scoped memory table\nScope Name    : " + m_scopeName + "\nScope Level   : " + MyTemplates::Str(m_scopedLevel) + "\n{\n");
 		for (auto it = m_memory_map.begin(); it != m_memory_map.end(); it++)
 			std::cout << it->first << " => " << it->second->ToString() << '\n';
 		std::cout << '}' << std::endl;
@@ -168,6 +170,66 @@ public:
 
 private:
 	MEMORY_MAP m_memory_map;
+	std::string m_scopeName;
+	unsigned int m_scopedLevel;
+};
+
+class ScopedProcedureTable
+{
+public:
+	ScopedProcedureTable() : m_scopeName(""), m_scopedLevel(0) {};
+	explicit ScopedProcedureTable(std::string name, unsigned int level)
+		:
+		m_scopeName(name),
+		m_scopedLevel(level)
+	{}
+	virtual ~ScopedProcedureTable() noexcept {};
+
+	void SetNameAndLevel(std::string name, unsigned int level)
+	{
+		m_scopeName = name;
+		m_scopedLevel = level;
+	}
+	std::string GetName() const noexcept
+	{
+		return m_scopeName;
+	}
+	unsigned int GetLevel() const noexcept
+	{
+		return m_scopedLevel;
+	}
+	void Reset() noexcept
+	{
+		m_scopeName = "";
+		m_scopedLevel = 0;
+		m_procedure_map.clear();
+	}
+	void PrintTable() noexcept
+	{
+		std::cout << ("Scoped procedure table\nScope Name    : " + m_scopeName + "\nScope Level   : " + MyTemplates::Str(m_scopedLevel) + "\n========================\n");
+		for (auto it = m_procedure_map.begin(); it != m_procedure_map.end(); it++)
+			std::cout << it->first << " => " << it->second->GetName() << std::endl;
+		std::cout << "" << std::endl;
+	}
+	bool define(std::string name, SHARE_PROCEDURE_AST var)
+	{
+		auto size = m_procedure_map.size();
+		m_procedure_map.insert(PROCEDURE_PAIR(name, var));
+		return (size + 1) == m_procedure_map.size();
+	}
+	SHARE_AST lookup(std::string name)
+	{
+		if (m_procedure_map.find(name) != m_procedure_map.end())
+			return m_procedure_map.at(name);
+		else
+			return MAKE_SHARE_EMPTY_AST();
+	}
+	bool valid(SHARE_AST var)
+	{
+		return (dynamic_pointer_cast<Procedure_AST>(var) != nullptr);
+	}
+private:
+	PROCEDURE_MAP m_procedure_map;
 	std::string m_scopeName;
 	unsigned int m_scopedLevel;
 };

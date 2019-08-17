@@ -21,4 +21,12 @@ namespace MyTemplates
 		ss << t;
 		return ss.str();
 	}
+
+	template <typename T>
+	std::wstring wStr(const T& t)
+	{
+		std::wstringstream ss;
+		ss << t;
+		return ss.str();
+	}
 }

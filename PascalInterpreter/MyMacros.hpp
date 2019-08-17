@@ -131,3 +131,6 @@ NumOp_code GetEnumNumOp(std::string const& op)
 
 #define SYMBOL_MAP std::map<std::string, VarSymbol>
 #define SYMBOL_PAIR std::pair<std::string, VarSymbol>
+
+#define PROCEDURE_MAP std::map<std::string, SHARE_PROCEDURE_AST>
+#define PROCEDURE_PAIR std::pair<std::string, SHARE_PROCEDURE_AST>
