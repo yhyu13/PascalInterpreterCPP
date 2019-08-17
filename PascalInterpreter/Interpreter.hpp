@@ -55,7 +55,12 @@ protected:
 class Interpreter: public NodeVisitor
 {
 public:
-	Interpreter() {};
+	Interpreter()
+		:
+		m_pSymbolTable(nullptr),
+		m_pMemoryTable(nullptr),
+		m_pProcedureTable(nullptr)
+	{}
 	virtual ~Interpreter() {};
 	
 	virtual void Reset() noexcept override
@@ -82,6 +87,11 @@ public:
 		m_pMemoryTable->PrintTable();
 	}
 
+	void PrintCurrentProcedureTable() noexcept
+	{
+		m_pProcedureTable->PrintTable();
+	}
+
 	void PrintAllSymbolTable() noexcept
 	{
 		for (auto& table : m_symoblTableVec)
@@ -94,14 +104,20 @@ public:
 			table.PrintTable();
 	}
 
+	void PrintAllProcedureTable() noexcept
+	{
+		for (auto& table : m_procedureTableVec)
+			table.PrintTable();
+	}
+
 public:
 	/*
 	Functionality: interpreting the AST
 	Return: InterpretProgram
 	*/
-	virtual void InterpretProgram(SHARE_AST root)
+	virtual SHARE_TOKEN_STRING InterpretProgram(SHARE_AST root)
 	{
-		InterpretProgramEntryHelper(root);
+		return InterpretProgramEntryHelper(root);
 	}
 
 protected:
@@ -113,6 +129,11 @@ protected:
 	inline void UpdateCurrentSymbolTable(ScopedSymbolTable* pSymbolTable)
 	{
 		m_pSymbolTable = pSymbolTable;
+	}
+
+	inline void UpdateCurrentProcedureTable(ScopedProcedureTable* pProcedureTable)
+	{
+		m_pProcedureTable = pProcedureTable;
 	}
 
 	void AddMemoryTable(std::string name, unsigned int level)
@@ -145,6 +166,21 @@ protected:
 		UpdateCurrentSymbolTable(&(m_symoblTableVec.back()));
 	}
 
+	void AddProcedureTable(std::string name, unsigned int level)
+	{
+		if (m_procedureTableVec.empty())
+		{
+			if (level != 1)
+				Error("SymbolError(Interpreter): adding a non-global(level!=1) table to a empty table vector.");
+		}
+		else if (m_procedureTableVec.back().GetLevel() != (level - 1))
+		{
+			Error("SymbolError(Interpreter): adding a " + MyTemplates::Str(level) + " table to a " + MyTemplates::Str(m_procedureTableVec.back().GetLevel()) + " table.");
+		}
+		m_procedureTableVec.push_back(ScopedProcedureTable(name, level));
+		UpdateCurrentProcedureTable(&(m_procedureTableVec.back()));
+	}
+
 	void AddTable(std::string name, unsigned int level = 0)
 	{
 		m_scopeCounter++;
@@ -153,6 +189,7 @@ protected:
 				" but the last level is " + MyTemplates::Str(m_scopeCounter) + " .");
 		AddMemoryTable(name, m_scopeCounter);
 		AddSymbolTable(name, m_scopeCounter);
+		AddProcedureTable(name, m_scopeCounter);
 	}
 
 	void PopBackTable()
@@ -172,9 +209,11 @@ protected:
 			{
 				m_memoryTableVec.pop_back();
 				m_symoblTableVec.pop_back();
+				m_procedureTableVec.pop_back();
 				m_scopeCounter--;
 				UpdateCurrentMemoryTable(&(m_memoryTableVec.back()));
 				UpdateCurrentSymbolTable(&(m_symoblTableVec.back()));
+				UpdateCurrentProcedureTable(&(m_procedureTableVec.back()));
 			}
 		}
 	}
@@ -216,6 +255,22 @@ protected:
 			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
 		else
 			return memory;
+	}
+
+	// Define a variable in procedure table
+	inline void ProcedureTableDefine(SHARE_PROCEDURE_AST var)
+	{
+		m_pProcedureTable->define(var->GetName(), var);
+	}
+
+	// Return the procedure AST a procedure name has assigned to
+	inline SHARE_PROCEDURE_AST ProcedureTableLookUp(std::string name, MEMORY var)
+	{
+		auto memory = m_pProcedureTable->lookup(name);
+		if (!m_pProcedureTable->valid(memory))
+			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
+		else
+			return static_pointer_cast<Procedure_AST>(memory);
 	}
 
 protected:
@@ -327,7 +382,9 @@ protected:
 				// Condition: is a procedure start
 				else if (SHARE_PROCEDURE_AST _procedure = dynamic_pointer_cast<Procedure_AST>(decal))
 				{
-					VisitProcedure(_procedure);
+					//VisitProcedure(_procedure);
+					ProcedureTableDefine(_procedure);
+					DEBUG_RUN(PrintCurrentProcedureTable());
 				}
 				else
 				{
@@ -340,19 +397,20 @@ protected:
 			DEBUG_MSG("Has no declaration.");
 		}
 		// Process the rest of the program.
-		InterpretProgramHelper(root->GetCompound());
+		auto result = InterpretProgramHelper(root->GetCompound());
 		PopBackTable();
-		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
+		return result;
 	}
 
 	virtual SHARE_TOKEN_STRING VisitCompound(SHARE_COMPOUND_AST root)
 	{
+		SHARE_TOKEN_STRING result;
 		for (auto& child : root->GetAllChildren())
 		{
 			DEBUG_MSG("Running statements list---> " + child->ToString());
-			InterpretProgramHelper(child);
+			result = InterpretProgramHelper(child);
 		}
-		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
+		return result;
 	}
 
 	virtual SHARE_TOKEN_STRING VisitBinary(SHARE_BINARY_AST root)
@@ -403,7 +461,7 @@ protected:
 		SymbolTableLookUp(name, rhs);
 		SymbolTableCheck(name, rhs);
 		MemoryTableDefine(name, rhs);
-		return MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"), 0);
+		return MAKE_EMPTY_MEMORY;
 	}
 
 	virtual SHARE_TOKEN_STRING VisitVairbale(SHARE_AST root)
@@ -446,10 +504,12 @@ protected:
 	// The ith table is enclosed by the (i-1)th table
 	std::vector<ScopedMemoryTable> m_memoryTableVec;
 	std::vector<ScopedSymbolTable> m_symoblTableVec;
+	std::vector<ScopedProcedureTable> m_procedureTableVec;
 
 	// Pointer to the current symbol/memory table
 	ScopedMemoryTable* m_pMemoryTable;
 	ScopedSymbolTable* m_pSymbolTable;
+	ScopedProcedureTable* m_pProcedureTable;
 };
 
 
