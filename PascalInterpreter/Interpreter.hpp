@@ -516,7 +516,10 @@ protected:
 class SemanticAnalyzer : public Interpreter
 {
 public:
-	SemanticAnalyzer() {};
+	SemanticAnalyzer() 
+	{
+		Interpreter::Interpreter();
+	}
 	virtual ~SemanticAnalyzer() {};
 
 protected:

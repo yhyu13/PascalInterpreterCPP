@@ -138,6 +138,7 @@ protected:
 	{
 		ConsumeTokenType(PROCEDURE);
 		auto programName = GetVariable();
+		auto params = GetParams();
 		ConsumeTokenType(SEMI);
 
 		auto block = GetBlock();
@@ -154,7 +155,27 @@ protected:
 		return MAKE_SHARE_BLOCK_AST(decal, comp);
 	}
 	/*
-		Declaration: Empty | VAR(variable_declaration SEMI)+
+	Declaration: Empty | (variable_declaration SEMI+ variable_declaration)
+	*/
+	SHARE_AST GetParams()
+	{
+		CREATE_SHARE_DECLARATION_AST(results);
+		if (TryConsumeTokenType(LEFT_PARATHESES))
+		{
+			while (m_CurrentToken->GetType() == ID)
+			{
+				results->AddVarDecal(GetVariableDeclaration());
+				if (!TryConsumeTokenType(SEMI))
+				{
+					ConsumeTokenType(RIGHT_PARATHESES);
+				}
+			}
+		}
+		return (results->IsEmpty()) ? GetEmpty() : results;
+	}
+
+	/*
+		Declaration: Empty | VAR(variable_declaration SEMI)+ | PROCEDURE(parameter_declaration) SEMI+
 	*/
 	SHARE_AST GetDeclaration()
 	{
@@ -173,14 +194,7 @@ protected:
 			ConsumeTokenType(SEMI);
 		}
 
-		if (results->IsEmpty())
-		{
-			return MAKE_SHARE_EMPTY_AST();
-		}
-		else
-		{
-			return results;
-		}
+		return (results->IsEmpty()) ? GetEmpty() : results;
 	}
 	/*
 	variable declaration: ID (COMMA ID)* COLON type_spec
