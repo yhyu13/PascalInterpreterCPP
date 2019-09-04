@@ -94,7 +94,7 @@ NumOp_code GetEnumNumOp(std::string const& op)
 #define MAKE_SHARE_ASSIGN_AST(left, right, op) std::make_shared<Assign_AST>(left, right, op)
 #define	MAKE_SHARE_EMPTY_AST() std::make_shared<Empty_AST>()
 #define MAKE_SHARE_PROGRAM_AST(name, block) std::make_shared<Program_AST>(name, block)
-#define MAKE_SHARE_PROCEDURE_AST(name, block) std::make_shared<Procedure_AST>(name, block)
+#define MAKE_SHARE_PROCEDURE_AST(name, params, block) std::make_shared<Procedure_AST>(name, params, block)
 #define MAKE_SHARE_BLOCK_AST(declaration, compound) std::make_shared<Block_AST>(declaration, compound)
 
 #define MAKE_SHARE_DECLARATION_AST() std::make_shared<Declaration_AST>()
@@ -112,7 +112,7 @@ NumOp_code GetEnumNumOp(std::string const& op)
 #define CREATE_SHARE_ASSIGN_AST(name, left, right, op) std::shared_ptr<Assign_AST> name(new Assign_AST(left, right, op));
 #define CREATE_SHARE_EMPTY_AST(name) std::shared_ptr<Empty_AST> name(new Empty_AST());
 #define CREATE_SHARE_PROGRAM_AST(name, programName, block) std::shared_ptr<Program_AST> name(new Program_AST(programName, block));
-#define CREATE_SHARE_PROCEDURE_AST(name, programName, block) std::shared_ptr<Procedure_AST> name(new Procedure_AST(programName, block));
+#define CREATE_SHARE_PROCEDURE_AST(name, programName, params, block) std::shared_ptr<Procedure_AST> name(new Procedure_AST(programName, params, block));
 #define CREATE_SHARE_BLOCK_AST(name, declaration, compound) std::shared_ptr<Block_AST> name(new Block_AST(declaration, compound));
 
 #define CREATE_SHARE_DECLARATION_AST(name) std::shared_ptr<Declaration_AST> name(new Declaration_AST());

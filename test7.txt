@@ -15,9 +15,10 @@ VAR
    END;  {P2}
 
 BEGIN {P1}
-
+   P2();
 END;  {P1}
 
 BEGIN {Part12}
    a := 10;
+   P1(b:=10);
 END.  {Part12}

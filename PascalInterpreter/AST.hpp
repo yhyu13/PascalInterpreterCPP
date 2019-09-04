@@ -190,9 +190,9 @@ public:
 	explicit Program_AST(SHARE_AST name, SHARE_AST block)
 	{
 		(check_is_shared_ptr(name)) ? m_name = name :
-			throw MyExceptions::MsgExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("name passed to a Program_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(block)) ? m_block = block :
-			throw MyExceptions::MsgExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("block passed to a Program_AST constructor must be a shared_ptr type.");
 	}
 	~Program_AST() noexcept override {};
 
@@ -200,7 +200,6 @@ public:
 	{
 		return *(m_name->GetToken()->GetValue());
 	}
-
 	SHARE_TOKEN_STRING GetToken() const noexcept override
 	{
 		return m_name->GetToken();
@@ -221,12 +220,14 @@ private:
 class Procedure_AST : public AST
 {
 public:
-	explicit Procedure_AST(SHARE_AST name, SHARE_AST block)
+	explicit Procedure_AST(SHARE_AST name, SHARE_AST params ,SHARE_AST block)
 	{
 		(check_is_shared_ptr(name)) ? m_name = name :
-			throw MyExceptions::MsgExecption("op passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("name passed to a Procedure_AST constructor must be a shared_ptr type.");
+		(check_is_shared_ptr(params)) ? m_params = params :
+			throw MyExceptions::MsgExecption("params passed to a Procedure_AST constructor must be a shared_ptr type.");
 		(check_is_shared_ptr(block)) ? m_block = block :
-			throw MyExceptions::MsgExecption("expr passed to a Program_AST constructor must be a shared_ptr type.");
+			throw MyExceptions::MsgExecption("block passed to a Procedure_AST constructor must be a shared_ptr type.");
 	}
 	~Procedure_AST() noexcept override {};
 
@@ -234,10 +235,13 @@ public:
 	{
 		return *(m_name->GetToken()->GetValue());
 	}
-
 	SHARE_TOKEN_STRING GetToken() const noexcept override
 	{
 		return m_name->GetToken();
+	}
+	SHARE_AST GetParams() const noexcept
+	{
+		return m_params;
 	}
 	SHARE_AST GetBlock() const noexcept
 	{
@@ -245,10 +249,11 @@ public:
 	}
 	std::string ToString() const noexcept override
 	{
-		return "Procedure: ( " + m_name->ToString() + " , " + m_block->ToString() + " ) ";
+		return "Procedure: ( " + m_name->ToString() + " : " + m_params->ToString() + " , " + m_block->ToString() + " ) ";
 	}
 private:
 	SHARE_AST m_name;
+	SHARE_AST m_params;
 	SHARE_AST m_block;
 };
 

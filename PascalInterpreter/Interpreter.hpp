@@ -219,7 +219,7 @@ protected:
 	}
 
 	// Define a variable in symbol table
-	inline void SymbolTableDefine(SHARE_VARDECL_AST varDecal)
+	void SymbolTableDefine(SHARE_VARDECL_AST varDecal)
 	{
 		std::string type = varDecal->GetTypeString();
 		std::string name = varDecal->GetVarString();
@@ -228,43 +228,81 @@ protected:
 	}
 
 	// Check existence of a variable
-	inline void SymbolTableLookUp(std::string name, MEMORY var)
+	unsigned int SymbolTableLookUp(std::string name, MEMORY var)
 	{
-		if (!m_pSymbolTable->valid(m_pSymbolTable->lookup(name)))
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " is an undeclared variable.", var->GetPos());
+		for (unsigned int i = m_scopeCounter; i >= 1; i--)
+		{
+			if (!m_symoblTableVec[i-1].valid(m_symoblTableVec[i-1].lookup(name)))
+				continue;
+			else
+				return i;
+		}
+		ErrorSFD("SymbolError(Interpreter): variable " + name + " is an undeclared variable.", var->GetPos());
 	}
 
 	// Check existence of a variable and it has a matched type
-	inline void SymbolTableCheck(std::string name, MEMORY targetVar)
+	unsigned int SymbolTableCheck(std::string name, MEMORY targetVar)
 	{
-		if (!m_pSymbolTable->check(name, targetVar))
+		for (unsigned int i = m_scopeCounter; i >= 1; i--)
+		{
+			if (!m_symoblTableVec[i-1].check(name, targetVar))
+				continue;
+			else
+				return i;
+		}
 		ErrorSFD("SymbolError(Interpreter): variable " + name + " with type " + m_pSymbolTable->lookup(name).GetType() + " does not match " + *(targetVar->GetValue()) + " with type " + targetVar->GetType() + " .", targetVar->GetPos());
 	}
 
 	// Define a variable in memory
-	inline void MemoryTableDefine(std::string name, MEMORY var)
+	void MemoryTableDefine(std::string name, MEMORY var, unsigned int scopeCounter = 0)
 	{
-		m_pMemoryTable->define(name, var);
+		if (scopeCounter == 0)
+		{
+			m_pMemoryTable->define(name, var);
+		}
+		else
+		{
+			m_memoryTableVec[scopeCounter - 1].define(name, var);
+		}
 	}
 
 	// Return the memory a variable has assigned to
-	inline MEMORY MemoryTableLookUp(std::string name, MEMORY var)
+	MEMORY MemoryTableLookUp(std::string name, MEMORY var, unsigned int scopeCounter=0)
 	{
-		auto memory = m_pMemoryTable->lookup(name);
-		if (!m_pMemoryTable->valid(memory))
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
+		// The scope of this varible is not specified, treated as a variable in the current scope
+		// Thus, it is SymbolTableLookUp's responsibility to provide the correct scope for this variable to look up in the memory table.
+		if (scopeCounter == 0)
+		{
+			auto memory = m_pMemoryTable->lookup(name);
+			if (!m_pMemoryTable->valid(memory))
+			{
+				ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
+				return MAKE_EMPTY_MEMORY;
+			}
+			else
+				return memory;
+		}
 		else
-			return memory;
+		{
+			auto memory = m_memoryTableVec[scopeCounter-1].lookup(name);
+			if (!m_memoryTableVec[scopeCounter - 1].valid(memory))
+			{
+				ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
+				return MAKE_EMPTY_MEMORY;
+			}
+			else
+				return memory;
+		}
 	}
 
 	// Define a variable in procedure table
-	inline void ProcedureTableDefine(SHARE_PROCEDURE_AST var)
+	void ProcedureTableDefine(SHARE_PROCEDURE_AST var)
 	{
 		m_pProcedureTable->define(var->GetName(), var);
 	}
 
 	// Return the procedure AST a procedure name has assigned to
-	inline SHARE_PROCEDURE_AST ProcedureTableLookUp(std::string name, MEMORY var)
+	SHARE_PROCEDURE_AST ProcedureTableLookUp(std::string name, MEMORY var)
 	{
 		auto memory = m_pProcedureTable->lookup(name);
 		if (!m_pProcedureTable->valid(memory))
@@ -282,8 +320,11 @@ protected:
 	virtual SHARE_TOKEN_STRING InterpretProgramEntryHelper(SHARE_AST root)
 	{
 		if (!root)
+		{
 			Error("ASTError(Interpreter): root of InterpretProgramEntryHelper is null.");
-
+			return MAKE_EMPTY_MEMORY;
+		}
+			
 		// Condition: is a program start
 		if (SHARE_PROGRAM_AST root_0 = dynamic_pointer_cast<Program_AST>(root))
 		{
@@ -297,6 +338,7 @@ protected:
 		else
 		{
 			Error("SyntaxError(Interpreter): program entry not defined");
+			return MAKE_EMPTY_MEMORY;
 		}
 	}
 
@@ -307,7 +349,10 @@ protected:
 	virtual SHARE_TOKEN_STRING InterpretProgramHelper(SHARE_AST root)
 	{
 		if (!root)
+		{
 			Error("ASTError(Interpreter): root of InterpretProgramHelper is null.");
+			return MAKE_EMPTY_MEMORY;
+		}
 
 		// Condition: is a compound statment
 		if (SHARE_COMPOUND_AST root_0 = dynamic_pointer_cast<Compound_AST>(root))
@@ -353,6 +398,39 @@ protected:
 	{
 		DEBUG_MSG("Running procedure---> " + root->GetName());
 		AddTable(root->GetName());
+
+		// Process parameters
+		if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root->GetParams()))
+		{
+			for (SHARE_AST& decal : declaration->GetAllChildren())
+			{
+				// Condition: is a variable declaration
+				if (SHARE_DECLCONTAINER_AST _declConatiner = dynamic_pointer_cast<DeclContainer_AST>(decal))
+				{
+					for (SHARE_AST& varDecal : _declConatiner->GetAllChildren())
+					{
+						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(varDecal))
+						{
+							SymbolTableDefine(_varDecal);
+						}
+						else
+						{
+							Error("SyntaxError(Interpreter): unknown parameter declaration");
+						}
+					}
+					DEBUG_RUN(PrintCurrentSymbolTable());
+				}
+				else
+				{
+					Error("ASTError(Interpreter): unknown parameter");
+				}
+			}
+		}
+		else
+		{
+			DEBUG_MSG("Procedure has no parameter");
+		}
+
 		return InterpretProgramEntryHelper(root->GetBlock());
 	}
 
@@ -382,7 +460,6 @@ protected:
 				// Condition: is a procedure start
 				else if (SHARE_PROCEDURE_AST _procedure = dynamic_pointer_cast<Procedure_AST>(decal))
 				{
-					//VisitProcedure(_procedure);
 					ProcedureTableDefine(_procedure);
 					DEBUG_RUN(PrintCurrentProcedureTable());
 				}
@@ -458,9 +535,17 @@ protected:
 	{
 		std::string name = root->GetVarName();
 		auto rhs = InterpretProgramHelper(root->GetRight());
-		SymbolTableLookUp(name, rhs);
-		SymbolTableCheck(name, rhs);
-		MemoryTableDefine(name, rhs);
+		auto scope = SymbolTableLookUp(name, rhs);
+		auto scope_ = SymbolTableCheck(name, rhs);
+
+		if (scope != scope_)
+		{
+			ErrorSFD("SymbolError(Interpreter): variable " + name + " has been found in multiple scoped symbol table.", rhs->GetPos());
+		}
+		else
+		{
+			MemoryTableDefine(name, rhs, scope);
+		}
 		return MAKE_EMPTY_MEMORY;
 	}
 
@@ -474,8 +559,8 @@ protected:
 		{
 			DEBUG_RUN(PrintCurrentMemoryTable());
 			std::string name = *(token->GetValue());
-			SymbolTableLookUp(name, token);
-			return MemoryTableLookUp(name, token);
+			auto scope = SymbolTableLookUp(name, token);
+			return MemoryTableLookUp(name, token, scope);
 		}
 		// is a type declaration
 		else if (type == TYPE)
@@ -560,6 +645,52 @@ protected:
 		}
 	}
 
+	virtual SHARE_TOKEN_STRING VisitBlock(SHARE_BLOCk_AST root)
+	{
+		// Process declarations.
+		if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root->GetDeclaration()))
+		{
+			for (SHARE_AST& decal : declaration->GetAllChildren())
+			{
+				// Condition: is a variable declaration
+				if (SHARE_DECLCONTAINER_AST _declConatiner = dynamic_pointer_cast<DeclContainer_AST>(decal))
+				{
+					for (SHARE_AST& varDecal : _declConatiner->GetAllChildren())
+					{
+						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(varDecal))
+						{
+							SymbolTableDefine(_varDecal);
+						}
+						else
+						{
+							Error("SyntaxError(Interpreter): unknown variable declaration");
+						}
+					}
+					DEBUG_RUN(PrintCurrentSymbolTable());
+				}
+				// Condition: is a procedure start
+				else if (SHARE_PROCEDURE_AST _procedure = dynamic_pointer_cast<Procedure_AST>(decal))
+				{
+					ProcedureTableDefine(_procedure);
+					DEBUG_RUN(PrintCurrentProcedureTable());
+					VisitProcedure(_procedure);
+				}
+				else
+				{
+					Error("ASTError(Interpreter): unknown declaration");
+				}
+			}
+		}
+		else
+		{
+			DEBUG_MSG("Has no declaration.");
+		}
+		// Process the rest of the program.
+		auto result = InterpretProgramHelper(root->GetCompound());
+		PopBackTable();
+		return result;
+	}
+
 	virtual SHARE_TOKEN_STRING VisitBinary(SHARE_BINARY_AST root) override
 	{
 		SHARE_TOKEN_STRING left = InterpretProgramHelper(root->GetLeft());
@@ -583,7 +714,7 @@ protected:
 		if (type == ID)
 		{
 			std::string name = *(token->GetValue());
-			SymbolTableLookUp(name, token);
+			auto scope = SymbolTableLookUp(name, token);
 		}
 		// is a type declaration
 		else if (type == TYPE)

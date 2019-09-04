@@ -86,6 +86,7 @@ protected:
 		else
 		{
 			ErrorSFD("SynatxError(parser): should comsume " + type + ", instead, comsuming " + m_CurrentToken->ToString());
+			return false;
 		}
 	}
 	/*
@@ -143,7 +144,7 @@ protected:
 
 		auto block = GetBlock();
 
-		return MAKE_SHARE_PROCEDURE_AST(programName, block);
+		return MAKE_SHARE_PROCEDURE_AST(programName, params, block);
 	}
 	/*
 		Block: Declaration  compound_statement
@@ -168,6 +169,7 @@ protected:
 				if (!TryConsumeTokenType(SEMI))
 				{
 					ConsumeTokenType(RIGHT_PARATHESES);
+					break;
 				}
 			}
 		}
@@ -349,6 +351,7 @@ protected:
 		else
 		{
 			ErrorSFD("SynatxError(parser): unknown factor: " + token->GetType() + ".");
+			return GetEmpty();
 		}
 	}
 	/*

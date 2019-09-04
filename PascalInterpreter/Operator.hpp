@@ -31,6 +31,7 @@ public:
 		if (left->GetType() != INTEGER && right->GetType() != INTEGER && left->GetType() != FLOAT && right->GetType() != FLOAT)
 		{
 			Error("SyntaxError: " + left->ToString() + " or " + right->ToString() + " is an not a integer/float or both.\n");
+			return MAKE_EMPTY_MEMORY;
 		}
 
 		bool isInt = false;
@@ -59,20 +60,27 @@ public:
 			else
 			{
 				Error("SyntaxError: Decimal number division by zero.");
+				return MAKE_EMPTY_MEMORY;
 			}
 		case eINT_DIV:
 			if (_right != 0)
 			{
 				if (!isInt)
+				{
 					Error("SyntaxError: integer devision applied to non-integer type.");
-				return MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)), left->GetPos());
+					return MAKE_EMPTY_MEMORY;
+				}
+				else
+					return MAKE_SHARE_TOKEN(INTEGER, MAKE_SHARE_STRING(MyTemplates::Str((int)_left / (int)_right)), left->GetPos());
 			}
 			else
 			{
 				Error("SyntaxError: Decimal number division by zero.");
+				return MAKE_EMPTY_MEMORY;
 			}
 		default:
 			Error("SyntaxError: " + op->ToString() + " is an UNKNOWN integer operation.\n");
+			return MAKE_EMPTY_MEMORY;
 		}
 	}
 
