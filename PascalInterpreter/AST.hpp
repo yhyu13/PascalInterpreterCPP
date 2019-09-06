@@ -285,7 +285,7 @@ public:
 	{
 		return m_compound;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "Block: ( " + m_declaration->ToString() + " , " + m_compound->ToString() + " ) ";
 	}
@@ -312,7 +312,7 @@ public:
 	{
 		return m_children;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		std::ostringstream oss;
 		oss << "Declaration_AST : ( ";
@@ -341,7 +341,7 @@ public:
 	{
 		return m_children;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		std::ostringstream oss;
 		oss << "DeclContainer_AST : ( ";
@@ -384,7 +384,7 @@ public:
 	{
 		return *(GetType()->GetToken()->GetValue());
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "VarDecl_AST: ( " + m_var->ToString() + " , " + m_type->ToString() + " ) ";
 	}

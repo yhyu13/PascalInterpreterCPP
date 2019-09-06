@@ -7,7 +7,6 @@ MACRO
 #include <memory>
 #include <algorithm>
 #include <vector>
-#include "MyDebug.hpp"
 using namespace std;
 
 /*
@@ -40,26 +39,6 @@ Token types
 #define EMPTY "EMPTY"
 
 #define __EOF__ "__EOF__"
-
-enum NumOp_code
-{
-	eUNKNOWN = -1,
-	ePLUS,
-	eMINUS,
-	eMULTIPLY,
-	eDIVIDE,
-	eINT_DIV
-};
-
-NumOp_code GetEnumNumOp(std::string const& op)
-{
-	if (op == PLUS) return ePLUS;
-	else if (op == MINUS) return eMINUS;
-	else if (op == MUL) return eMULTIPLY;
-	else if (op == DIV) return eDIVIDE;
-	else if (op == INT_DIV) return eINT_DIV;
-	else return eUNKNOWN;
-}
 
 //Utility----------------------------------------------------------------------------------------------
 #define Myprintln(var) std::cout << var->ToString() << std::endl;
