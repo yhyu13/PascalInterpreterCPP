@@ -63,11 +63,15 @@ int main()
 					parser.SetSFD(&sfd);
 					auto root_tree = parser.GetProgramAST();
 
+					std::cout << "Semantic Analyzer-----------------------------------------" << std::endl;
+
 					// Define semantic analyzer
 					auto SA = SemanticAnalyzer();
 					SA.Reset();
 					SA.SetSFD(&sfd);
 					SA.InterpretProgram(root_tree);
+
+					std::cout << "Interpreter-----------------------------------------------" << std::endl;
 
 					// Define interpreter
 					auto inter = Interpreter();

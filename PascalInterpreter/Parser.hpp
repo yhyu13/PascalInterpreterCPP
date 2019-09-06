@@ -106,6 +106,15 @@ protected:
 			return false;
 		}
 	}
+	/*
+	Functionality: Simply call GetNextToken and return type
+	Return: next token type
+	*/
+	std::string PeekNextConsumeTokenType()
+	{
+
+		return m_lexer->GetNextToken()->GetType();
+	}
 protected:
 	/*
 		program: PROGRAM variable SEMI Block DOT
@@ -116,9 +125,7 @@ protected:
 		// Declared a prorgam name
 		if (TryConsumeTokenType(PROGRAM))
 		{
-			
 			auto programName = GetVariable();
-			
 			ConsumeTokenType(SEMI);
 			auto block = GetBlock();
 			ConsumeTokenType(DOT);
@@ -138,8 +145,8 @@ protected:
 	SHARE_AST GetProcedure()
 	{
 		ConsumeTokenType(PROCEDURE);
-		auto programName = GetVariable();
-		auto params = GetParams();
+		auto programName = GetVariable(CALL_ID);
+		auto params = GetParamsDecal();
 		ConsumeTokenType(SEMI);
 
 		auto block = GetBlock();
@@ -158,22 +165,53 @@ protected:
 	/*
 	Declaration: Empty | (variable_declaration SEMI+ variable_declaration)
 	*/
-	SHARE_AST GetParams()
+	SHARE_AST GetParamsDecal()
 	{
 		CREATE_SHARE_DECLARATION_AST(results);
-		if (TryConsumeTokenType(LEFT_PARATHESES))
+		ConsumeTokenType(LEFT_PARATHESES);
+		while (m_CurrentToken->GetType() == ID)
 		{
-			while (m_CurrentToken->GetType() == ID)
-			{
-				results->AddVarDecal(GetVariableDeclaration());
-				if (!TryConsumeTokenType(SEMI))
-				{
-					ConsumeTokenType(RIGHT_PARATHESES);
-					break;
-				}
-			}
+			results->AddVarDecal(GetVariableDeclaration());
+			if (TryConsumeTokenType(SEMI))
+				continue;
+			else
+				break;
 		}
+		ConsumeTokenType(RIGHT_PARATHESES);
 		return (results->IsEmpty()) ? GetEmpty() : results;
+	}
+	/*
+	Assignment: Empty | (assignment_statement ,+assignment_statement)
+	*/
+	SHARE_AST GetParamsAssigment()
+	{
+		ConsumeTokenType(LEFT_PARATHESES);
+
+		SHARE_AST result = GetStatement();
+		std::vector<SHARE_AST> result_list;
+		result_list.push_back(result);
+
+		if (dynamic_pointer_cast<Empty_AST>(result))
+		{
+			ConsumeTokenType(RIGHT_PARATHESES);
+			return GetEmpty();
+		}
+		else
+		{
+			while (TryConsumeTokenType(COMMA))
+			{
+				result = GetStatement();
+				result_list.push_back(result);
+			}
+			ConsumeTokenType(RIGHT_PARATHESES);
+
+			CREATE_SHARE_COMPOUND_AST(root);
+			for (auto& r : result_list)
+			{
+				root->AddStatements(r);
+			}
+			return root;
+		}
 	}
 
 	/*
@@ -280,7 +318,7 @@ protected:
 		}
 		else
 		{
-			return GetEmpty();
+			return GetExpr();
 		}
 	}
 	/*
@@ -297,10 +335,10 @@ protected:
 	/*
 		variable : ID
 	*/
-	SHARE_AST GetVariable()
+	SHARE_AST GetVariable(std::string type = ID)
 	{
 		auto token = m_CurrentToken;
-		ConsumeTokenType(ID);
+		ConsumeTokenType(type);
 		return MAKE_SHARE_AST(token);
 	}
 	/*
@@ -348,9 +386,16 @@ protected:
 		{
 			return GetVariable();
 		}
+		// Handle call
+		else if (token->GetType() == token_code_factor[7])
+		{
+			auto name = GetVariable(CALL_ID);
+			auto result = GetParamsAssigment();
+			return MAKE_SHARE_PROCEDURE_AST(name, result, GetEmpty());
+		}
 		else
 		{
-			ErrorSFD("SynatxError(parser): unknown factor: " + token->GetType() + ".");
+			//ErrorSFD("SynatxError(parser): unknown factor: " + token->GetType() + ".");
 			return GetEmpty();
 		}
 	}
@@ -409,7 +454,7 @@ private:
 	Lexer* m_lexer;
 	SHARE_TOKEN_STRING m_CurrentToken;
 	SHARE_AST m_pAST;
-	std::vector<std::string> token_code_factor = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS , ID, FLOAT };
+	std::vector<std::string> token_code_factor = { INTEGER, LEFT_PARATHESES, RIGHT_PARATHESES, PLUS, MINUS , ID, FLOAT,CALL_ID };
 	std::vector<std::string> token_code_term = { MUL, DIV, INT_DIV };
 	std::vector<std::string> token_code_expr = { PLUS, MINUS };
 

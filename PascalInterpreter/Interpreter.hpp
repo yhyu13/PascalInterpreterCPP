@@ -306,7 +306,7 @@ protected:
 	{
 		auto memory = m_pProcedureTable->lookup(name);
 		if (!m_pProcedureTable->valid(memory))
-			ErrorSFD("SymbolError(Interpreter): variable " + name + " used before reference.", var->GetPos());
+			ErrorSFD("SymbolError(Interpreter): procedure " + name + " used before reference.", var->GetPos());
 		else
 			return static_pointer_cast<Procedure_AST>(memory);
 	}
@@ -379,6 +379,11 @@ protected:
 		{
 			return VisitAssign(root_4);
 		}
+		// Condition: is a assign statement
+		else if (SHARE_PROCEDURE_AST root_5 = dynamic_pointer_cast<Procedure_AST>(root))
+		{
+			return VisitProcedureCall(root_5);
+		}
 		// Condition: is a variable/static
 		else
 		{
@@ -394,7 +399,21 @@ protected:
 		return InterpretProgramEntryHelper(root->GetBlock());
 	}
 
-	virtual SHARE_TOKEN_STRING VisitProcedure(SHARE_PROCEDURE_AST root)
+	virtual SHARE_TOKEN_STRING VisitProcedureCall(SHARE_PROCEDURE_AST root)
+	{
+		auto procedure = ProcedureTableLookUp(root->GetName(), root->GetToken());
+
+		if (SHARE_COMPOUND_AST params = dynamic_pointer_cast<Compound_AST>(root->GetParams()))
+		{
+			return VisitProcedure(procedure, params);
+		}
+		else
+		{
+			return VisitProcedure(procedure, nullptr);
+		}
+	}
+
+	virtual SHARE_TOKEN_STRING VisitProcedure(SHARE_PROCEDURE_AST root, SHARE_COMPOUND_AST params = nullptr)
 	{
 		DEBUG_MSG("Running procedure---> " + root->GetName());
 		AddTable(root->GetName());
@@ -402,6 +421,12 @@ protected:
 		// Process parameters
 		if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root->GetParams()))
 		{
+
+			if (params == nullptr)
+			{
+				Error("SyntaxError(Interpreter): Procedure parameters are declared without reference.");
+			}
+			// Define parameter
 			for (SHARE_AST& decal : declaration->GetAllChildren())
 			{
 				// Condition: is a variable declaration
@@ -422,9 +447,25 @@ protected:
 				}
 				else
 				{
-					Error("ASTError(Interpreter): unknown parameter");
+					Error("SyntaxError(Interpreter): unknown declaration");
 				}
 			}
+			// Assign parameter
+			for (auto& child : params->GetAllChildren())
+			{
+				if (SHARE_ASSIGN_AST params_assign = dynamic_pointer_cast<Assign_AST>(child))
+				{
+					VisitAssign(params_assign);
+				}
+				else
+				{
+					Error("SyntaxError(Interpreter): unknown parameter assignment.");
+				}
+			}
+		}
+		else if (params != nullptr)
+		{
+			Error("SyntaxError(Interpreter): Too many arguments for procedure.");
 		}
 		else
 		{
@@ -689,6 +730,47 @@ protected:
 		auto result = InterpretProgramHelper(root->GetCompound());
 		PopBackTable();
 		return result;
+	}
+
+	virtual SHARE_TOKEN_STRING VisitProcedure(SHARE_PROCEDURE_AST root, SHARE_COMPOUND_AST params = nullptr) override
+	{
+		DEBUG_MSG("Running procedure---> " + root->GetName());
+		AddTable(root->GetName());
+
+		// Process parameters
+		if (SHARE_DECLARATION_AST declaration = dynamic_pointer_cast<Declaration_AST>(root->GetParams()))
+		{
+			// Define parameter
+			for (SHARE_AST& decal : declaration->GetAllChildren())
+			{
+				// Condition: is a variable declaration
+				if (SHARE_DECLCONTAINER_AST _declConatiner = dynamic_pointer_cast<DeclContainer_AST>(decal))
+				{
+					for (SHARE_AST& varDecal : _declConatiner->GetAllChildren())
+					{
+						if (SHARE_VARDECL_AST _varDecal = dynamic_pointer_cast<VarDecl_AST>(varDecal))
+						{
+							SymbolTableDefine(_varDecal);
+						}
+						else
+						{
+							Error("SyntaxError(Interpreter): unknown parameter declaration");
+						}
+					}
+					DEBUG_RUN(PrintCurrentSymbolTable());
+				}
+				else
+				{
+					Error("SyntaxError(Interpreter): unknown declaration");
+				}
+			}
+		}
+		else
+		{
+			DEBUG_MSG("Procedure has no parameter");
+		}
+
+		return InterpretProgramEntryHelper(root->GetBlock());
 	}
 
 	virtual SHARE_TOKEN_STRING VisitBinary(SHARE_BINARY_AST root) override

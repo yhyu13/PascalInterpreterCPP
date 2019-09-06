@@ -165,6 +165,10 @@ protected:
 		{
 			result = MAKE_SHARE_TOKEN(TYPE, MAKE_SHARE_STRING(charBuffer), _pos);
 		}
+		else if (m_CurrentChar == '(')
+		{
+			result = MAKE_SHARE_TOKEN(CALL_ID, MAKE_SHARE_STRING(charBuffer), _pos);
+		}
 		else
 		{
 			result = MAKE_SHARE_TOKEN(ID, MAKE_SHARE_STRING(charBuffer), _pos);

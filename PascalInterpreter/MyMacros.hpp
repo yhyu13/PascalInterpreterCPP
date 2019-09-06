@@ -29,6 +29,7 @@ Token types
 
 #define PROGRAM "PROGRAM"
 #define PROCEDURE "PROCEDURE"
+#define CALL_ID "CALL_ID"
 #define VAR "VAR"
 #define BEGIN "BEGIN"
 #define END "END"

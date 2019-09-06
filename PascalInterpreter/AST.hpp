@@ -36,7 +36,7 @@ public:
 		: 
 		AST(MAKE_SHARE_TOKEN(EMPTY, MAKE_SHARE_STRING("\0"),0)) 
 	{}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "Empty_AST : () ";
 	}
@@ -54,7 +54,7 @@ public:
 	}
 	~UnaryOp_AST() noexcept override {};
 
-	SHARE_TOKEN_STRING GetToken() const noexcept override
+	virtual SHARE_TOKEN_STRING GetToken() const noexcept override
 	{
 		return m_op;
 	}
@@ -62,7 +62,7 @@ public:
 	{
 		return m_expr;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "Unary OP: ( " + m_op->ToString() + " , " + m_expr->ToString() + " ) ";
 	}
@@ -96,7 +96,11 @@ public:
 	{
 		return m_op;
 	}
-	std::string ToString() const noexcept override
+	virtual SHARE_TOKEN_STRING GetToken() const noexcept override
+	{
+		return m_op->GetToken();
+	}
+	virtual std::string ToString() const noexcept override
 	{
 		std::ostringstream oss;
 		oss << "Binary OP: ( " << m_left->ToString() << " | " << m_right->ToString() << " | " << m_op->ToString() << " ) ";
@@ -126,7 +130,7 @@ public:
 	{
 		return m_children;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		std::ostringstream oss;
 		oss << "Compound_AST : ( ";
@@ -172,7 +176,11 @@ public:
 	{
 		return m_op;
 	}
-	std::string ToString() const noexcept override
+	virtual SHARE_TOKEN_STRING GetToken() const noexcept override
+	{
+		return m_op->GetToken();
+	}
+	virtual std::string ToString() const noexcept override
 	{
 		std::ostringstream oss;
 		oss << "Assign OP: ( " << m_left->ToString() << " | " << m_right->ToString() << " | " << m_op->ToString() << " ) ";
@@ -200,7 +208,7 @@ public:
 	{
 		return *(m_name->GetToken()->GetValue());
 	}
-	SHARE_TOKEN_STRING GetToken() const noexcept override
+	virtual SHARE_TOKEN_STRING GetToken() const noexcept override
 	{
 		return m_name->GetToken();
 	}
@@ -208,7 +216,7 @@ public:
 	{
 		return m_block;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "Program: ( " + m_name->ToString() + " , " + m_block->ToString() + " ) ";
 	}
@@ -235,7 +243,7 @@ public:
 	{
 		return *(m_name->GetToken()->GetValue());
 	}
-	SHARE_TOKEN_STRING GetToken() const noexcept override
+	virtual SHARE_TOKEN_STRING GetToken() const noexcept override
 	{
 		return m_name->GetToken();
 	}
@@ -247,7 +255,7 @@ public:
 	{
 		return m_block;
 	}
-	std::string ToString() const noexcept override
+	virtual std::string ToString() const noexcept override
 	{
 		return "Procedure: ( " + m_name->ToString() + " : " + m_params->ToString() + " , " + m_block->ToString() + " ) ";
 	}
